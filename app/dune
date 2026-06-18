@@ -1,6 +1,6 @@
 (executable
  (name ios_app)
- (modules ios_app)
+ (modules native_ui ios_app)
  (enabled_if
   (or
    (= %{context_name} device.ios)

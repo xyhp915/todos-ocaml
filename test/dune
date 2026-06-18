@@ -1,3 +1,7 @@
 (test
  (name test_todo_store)
  (libraries todos_ocaml))
+
+(test
+ (name test_todo_presentation)
+ (libraries todos_ocaml))
