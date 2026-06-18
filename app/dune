@@ -29,8 +29,8 @@
   "-framework Security")
  (libraries
   todos_ocaml
-  bonsai_apple
-  bonsai_apple.uikit
+  bonsai
+  bonsai.driver
   core
   camlkit-base.CoreAnimation
   camlkit-base.CoreGraphics
@@ -42,8 +42,8 @@
 (subdir
  Todos.app
  (rule
-  (alias default)
-  (deps ../Info.plist ../ios_app.exe)
+ (alias default)
+  (deps ../Info.plist ../Entitlements.plist ../ios_app.exe)
   (targets Info.plist Todos)
   (enabled_if
    (or
@@ -60,5 +60,7 @@
      --force
      --sign
      %{env:CODESIGN_IDENTITY=20C6BAC6D27E2CC8D07385E763D2618774727C50}
+     --entitlements
+     ../Entitlements.plist
      --timestamp=none
      Todos)))))
