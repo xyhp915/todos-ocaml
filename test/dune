@@ -12,3 +12,10 @@
  (name test_todo_app_state)
  (modules test_todo_app_state)
  (libraries todos_ocaml))
+
+(test
+ (name test_todo_ui)
+ (modules test_todo_ui)
+ (libraries bonsai_apple core todos_ocaml)
+ (preprocess
+  (pps ppx_jane bonsai.ppx_bonsai)))

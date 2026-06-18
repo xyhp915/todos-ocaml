@@ -1,4 +1,6 @@
 (library
  (name todos)
  (public_name todos_ocaml)
- (libraries datascript_ocaml))
+ (libraries bonsai bonsai_apple datascript_ocaml)
+ (preprocess
+  (pps bonsai.ppx_bonsai)))

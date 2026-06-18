@@ -15,6 +15,4 @@
   (core (= v0.18~preview.130.100+614))
   (ppx_jane (= v0.18~preview.130.100+614))
   bonsai_native
-  bonsai_apple
-  camlkit-base
-  camlkit-gui))
+  bonsai_apple))

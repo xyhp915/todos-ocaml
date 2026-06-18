@@ -62,8 +62,8 @@ let header_title ~mode ~section_title ~todo_count =
   | Upcoming, "Upcoming" -> ""
   | Search, "Today" -> ""
   | Dashboard, ("Today" | "Upcoming" | "Completed") ->
-    Printf.sprintf "%s  %d" section_title todo_count
-  | _ -> Printf.sprintf "%s  %d" section_title todo_count
+    Printf.sprintf "%s %d" section_title todo_count
+  | _ -> Printf.sprintf "%s %d" section_title todo_count
 
 let todo_metadata todo =
   match String.trim todo.Todo_store.time, String.trim todo.date with

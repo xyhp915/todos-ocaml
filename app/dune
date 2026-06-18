@@ -1,6 +1,6 @@
 (executable
  (name ios_app)
- (modules native_ui ios_app)
+ (modules ios_app)
  (enabled_if
   (or
    (= %{context_name} device.ios)
@@ -22,22 +22,40 @@
   -ccopt
   "%{env:IOS_SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk}"
   -ccopt
-  "-miphoneos-version-min=17.0"
-  -ccopt
-  "-framework UIKit"
-  -ccopt
-  "-framework Security")
+  "-miphoneos-version-min=17.0")
+ (extra_objects BonsaiNativeSwiftUI)
  (libraries
   todos_ocaml
   bonsai
   bonsai.driver
-  core
-  camlkit-base.CoreAnimation
-  camlkit-base.CoreGraphics
-  camlkit-base.Foundation
-  camlkit-gui.UIKit)
+  bonsai_apple.swiftui
+  core)
  (preprocess
   (pps ppx_jane bonsai.ppx_bonsai)))
+
+(rule
+ (target BonsaiNativeSwiftUI.o)
+ (deps
+  /Users/tiensonqin/Codes/projects/bonsai-native/apple/swiftui/BonsaiNativeSwiftUI.swift)
+ (enabled_if
+  (or
+   (= %{context_name} device.ios)
+   (= %{context_name} simulator.ios)
+   (= %{context_name} simulator-arm.ios)
+   (= %{context_name} catalyst.ios)))
+ (action
+  (run
+   xcrun
+   swiftc
+   -target
+   %{env:IOS_TARGET=arm64-apple-ios17.0-simulator}
+   -sdk
+   %{env:IOS_SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk}
+   -parse-as-library
+   -emit-object
+   %{deps}
+   -o
+   %{target})))
 
 (subdir
  Todos.app
@@ -56,11 +74,16 @@
     (copy ../Info.plist Info.plist)
     (copy ../ios_app.exe Todos)
     (run
-     codesign
-     --force
-     --sign
-     %{env:CODESIGN_IDENTITY=20C6BAC6D27E2CC8D07385E763D2618774727C50}
-     --entitlements
-     ../Entitlements.plist
-     --timestamp=none
-     Todos)))))
+     bash
+     -c
+     "\
+case \"$1\" in
+  simulator.ios|simulator-arm.ios|catalyst.ios)
+    codesign --force --sign \"${CODESIGN_IDENTITY:--}\" --timestamp=none Todos
+    ;;
+  *)
+    codesign --force --sign \"${CODESIGN_IDENTITY:-20C6BAC6D27E2CC8D07385E763D2618774727C50}\" --entitlements ../Entitlements.plist --timestamp=none Todos
+    ;;
+esac"
+     --
+     %{context_name})))))

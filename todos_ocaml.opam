@@ -1,7 +1,7 @@
 opam-version: "2.0"
-synopsis: "Liquid-style iOS todo app built with DataScript OCaml and Bonsai Native"
+synopsis: "iOS todo app built with DataScript and Bonsai Native"
 description: """
-A native iOS todo app whose domain state is stored in datascript-ocaml and rendered with bonsai-native.
+A native iOS todo app whose domain state is stored in datascript and rendered with bonsai-native.
 """
 maintainer: "Tienson Qin"
 authors: ["Tienson Qin"]
@@ -15,8 +15,6 @@ depends: [
   "ppx_jane" {= "v0.18~preview.130.100+614"}
   "bonsai_native"
   "bonsai_apple"
-  "camlkit-base"
-  "camlkit-gui"
 ]
 pin-depends: [
   ["datascript_ocaml.dev" "git+https://github.com/logseq/datascript-ocaml.git"]
