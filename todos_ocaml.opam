@@ -23,7 +23,7 @@ depends: [
 ]
 pin-depends: [
   ["persistent_sorted_set_ocaml.dev" "git+https://github.com/logseq/persistent-sorted-set-ocaml.git#83a3483bc6406337a1c0f60ac1813d8339a94c42"]
-  ["datascript_ocaml.dev" "git+https://github.com/logseq/datascript-ocaml.git#40308e1cd6573cdfa840a28518ed0fcac7f8832e"]
+  ["datascript_ocaml.dev" "git+https://github.com/logseq/datascript-ocaml.git#f9e0ab7cc41a9b3ebf402b40bc1a6a21caf76929"]
   ["bonsai_native.dev" "git+https://github.com/logseq/bonsai-native.git#9a87d81f925ca617755cf3eb341cfd287a0750b3"]
   ["bonsai_apple.dev" "git+https://github.com/logseq/bonsai-native.git#9a87d81f925ca617755cf3eb341cfd287a0750b3"]
 ]
