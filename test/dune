@@ -1,22 +1,7 @@
 (test
- (name test_todo_store)
- (modules test_todo_store)
- (libraries todos_ocaml unix))
-
-(test
- (name test_todo_presentation)
- (modules test_todo_presentation)
- (libraries todos_ocaml))
-
-(test
- (name test_todo_app_state)
- (modules test_todo_app_state)
- (libraries todos_ocaml))
-
-(test
  (name test_todo_ui)
  (modules test_todo_ui)
- (libraries bonsai_apple core todos_ocaml todos_ocaml.apple_ui)
+ (libraries bonsai_apple core todos_ocaml.core todos_ocaml.apple_ui)
  (preprocess
   (pps ppx_jane bonsai.ppx_bonsai)))
 

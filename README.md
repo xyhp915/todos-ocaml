@@ -5,8 +5,9 @@ Cross-platform todo app built with `datascript-ocaml` for shared domain state,
 
 ## What is included
 
-- Shared todo state, actions, screen model, DataScript store, and native runtime
-  in `lib/todo_core.ml` and `lib/todo_runtime.ml`.
+- Shared todo state, actions, screen model, and DataScript store in
+  `lib/todo_core.ml`.
+- Native SQLite runtime adapter in `lib/todo_runtime.ml`.
 - Native Apple UI in `lib/todo_ui.ml`.
 - iOS SwiftUI entrypoint in `app/ios_app.ml`.
 - macOS SwiftUI desktop entrypoint in `app/mac_app.ml`.
@@ -29,9 +30,6 @@ opam install . --deps-only --with-test
 
 ```sh
 opam exec --switch=simulator -- dune runtest --workspace dune-workspace.simulator \
-  _build/simulator/test/test_todo_store.exe \
-  _build/simulator/test/test_todo_app_state.exe \
-  _build/simulator/test/test_todo_presentation.exe \
   _build/simulator/test/test_todo_ui.exe \
   _build/simulator/test/test_todo_model.exe
 ```

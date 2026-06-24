@@ -10,11 +10,10 @@
 (library
  (name todos)
  (public_name todos_ocaml)
- (modules
-  (:standard \ todo_core todos_transit todo_ui))
+ (modules todo_runtime)
  (foreign_stubs
   (language c)
-  (names todo_sqlite_stubs todo_datascript_sqlite_stubs))
+  (names todo_datascript_sqlite_stubs))
  (c_library_flags
   (:standard -lsqlite3))
  (libraries
