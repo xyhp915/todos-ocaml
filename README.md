@@ -46,8 +46,16 @@ opam exec --switch=simulator -- dune build --workspace dune-workspace.simulator 
   _build/simulator.ios/app/Todos.app
 ```
 
-For a physical device, prepare the `device` switch and build with
-`--workspace dune-workspace.device`.
+For a physical device, prepare the `device` switch and build with the iphoneos
+SDK:
+
+```sh
+IOS_TARGET=arm64-apple-ios17.0 \
+IOS_ARCH=arm64 \
+IOS_SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path) \
+opam exec --switch=device -- dune build --workspace dune-workspace.device \
+  _build/device.ios/app/Todos.app
+```
 
 ## Build macOS Desktop
 
