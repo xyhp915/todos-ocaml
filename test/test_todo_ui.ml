@@ -107,15 +107,76 @@ let test_mobile_model_renders_tabbed_phone_ui () =
   in
   let output = render_mobile model in
   assert_contains "mobile tabs" output ~substring:"tab-view";
-  assert_contains "tasks tab" output ~substring:"all:Tasks";
-  assert_contains "active tab" output ~substring:"active:Active";
-  assert_contains "completed tab" output ~substring:"completed:Completed";
+  assert_contains "today tab" output ~substring:"today:Today:sun.max";
+  assert_contains "upcoming tab" output ~substring:"upcoming:Upcoming:calendar";
+  assert_contains "add tab" output ~substring:"add:Add:plus";
+  assert_contains "search tab" output ~substring:"search:Search:magnifyingglass:search";
+  assert_contains "dashboard greeting" output ~substring:"Good morning";
+  assert_contains "dashboard subtitle" output ~substring:"Let's get things done.";
   assert_contains "shared row" output ~substring:"iOS UI";
-  assert_contains "mobile search" output ~substring:"searchable";
+  assert_contains "mobile scroll content" output ~substring:"scroll-view";
+  assert_not_contains "mobile does not show inline composer" output ~substring:"placeholder=\"New task\"";
   assert_not_contains "mobile fixed input width" output ~substring:"modifiers=[frame]";
   assert_no_empty_label "mobile empty error gap" output;
   if String.is_substring output ~substring:"navigation-split"
   then failf "mobile output should not render navigation-split, got:\n%s" output
+;;
+
+let test_mobile_search_tab_owns_searchable_modifier () =
+  let controls = { Todo_ui.default_controls with route = Todos.Screen.Route.Completed } in
+  let output = render_mobile Todos.Model.initial ~controls in
+  assert_contains "search tab exists" output ~substring:"search:Search:magnifyingglass:search";
+  assert_contains "search tab content is searchable" output ~substring:"searchable"
+;;
+
+let test_mobile_selected_search_tab_keeps_searchable_on_search_content () =
+  let controls = { Todo_ui.default_controls with mobile_tab = "search" } in
+  let output = render_mobile Todos.Model.initial ~controls in
+  assert_contains "search tab selected" output ~substring:"tab-view#1 selected=search";
+  assert_contains
+    "search tab content owns searchable"
+    output
+    ~substring:"key=search modifiers=[searchable]"
+;;
+
+let test_mobile_rows_support_edit_and_delete_swipes () =
+  let model =
+    { Todos.Model.initial with
+      todos = [ todo ~id:"todo-1" ~title:"Editable task" ~created_at_ms:10 () ]
+    }
+  in
+  let output = render_mobile model in
+  assert_contains "row edit action" output ~substring:"actions=[Edit";
+  assert_contains "row delete action" output ~substring:"Delete:destructive"
+;;
+
+let test_mobile_edit_flow_uses_sheet_editor () =
+  let model =
+    { Todos.Model.initial with
+      draft = "Editable task"
+    ; todos = [ todo ~id:"todo-1" ~title:"Editable task" ~created_at_ms:10 () ]
+    }
+  in
+  let controls = { Todo_ui.default_controls with editing_todo_id = "todo-1" } in
+  let output = render_mobile model ~controls in
+  assert_contains "edit sheet" output ~substring:"sheet:";
+  assert_contains "edit task title" output ~substring:"Edit Task";
+  assert_contains "edit task field" output ~substring:"text=\"Editable task\" placeholder=\"Task title\"";
+  assert_contains "edit cancel" output ~substring:"Cancel";
+  assert_contains "edit save" output ~substring:"Save"
+;;
+
+let test_mobile_add_flow_uses_sheet_editor () =
+  let controls =
+    { Todo_ui.default_controls with mobile_new_task_presented = true }
+  in
+  let output = render_mobile Todos.Model.initial ~controls in
+  assert_contains "add sheet" output ~substring:"sheet:";
+  assert_contains "new task title" output ~substring:"New Task";
+  assert_contains "sheet task field" output ~substring:"placeholder=\"Task title\"";
+  assert_contains "sheet cancel" output ~substring:"Cancel";
+  assert_contains "sheet save" output ~substring:"Save";
+  assert_not_contains "no inline composer" output ~substring:"placeholder=\"New task\""
 ;;
 
 let test_adaptive_model_contains_phone_and_regular_layouts () =
@@ -146,6 +207,11 @@ let () =
   test_empty_model_renders_split_view_composer_and_search ();
   test_loaded_model_renders_split_view_and_tasks ();
   test_mobile_model_renders_tabbed_phone_ui ();
+  test_mobile_search_tab_owns_searchable_modifier ();
+  test_mobile_selected_search_tab_keeps_searchable_on_search_content ();
+  test_mobile_rows_support_edit_and_delete_swipes ();
+  test_mobile_edit_flow_uses_sheet_editor ();
+  test_mobile_add_flow_uses_sheet_editor ();
   test_adaptive_model_contains_phone_and_regular_layouts ();
   test_search_filters_visible_tasks ()
 ;;

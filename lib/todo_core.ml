@@ -14,6 +14,10 @@ module Store_write = struct
     | Add of Todo.t
     | Toggle of string
     | Delete of string
+    | Update_title of
+        { id : string
+        ; title : string
+        }
 end
 
 module Store = struct
@@ -24,6 +28,10 @@ module Store = struct
     | Add of Todo.t
     | Toggle of string
     | Delete of string
+    | Update_title of
+        { id : string
+        ; title : string
+        }
 
   let attr_id = "todo/id"
   let attr_title = "todo/title"
@@ -125,6 +133,10 @@ module Store = struct
        | Some todo ->
          transact db [ Ds.Add (lookup id, attr_completed, Bool (not todo.completed)) ])
     | Delete id -> transact db [ Ds.RetractEntity (lookup id) ]
+    | Update_title { id; title } ->
+      (match entity_for_id db id with
+       | None -> db
+       | Some _ -> transact db [ Ds.Add (lookup id, attr_title, String title) ])
   ;;
 
   let list db =
@@ -560,6 +572,9 @@ module Action = struct
     | Store_failed of string
     | Set_draft of string
     | Submit_new of new_todo
+    | Update_title of
+        { id : string
+        }
     | Toggle of string
     | Delete of string
     | Subscribe_query of
@@ -593,6 +608,13 @@ module Model = struct
       else (
         let todo = { Todo.id; title; completed = false; created_at_ms } in
         { model with draft = ""; error = None }, [ background (Persist (Add todo)) ])
+    | Action.Update_title { id } ->
+      let title = String.strip model.draft in
+      if String.is_empty title
+      then model, []
+      else
+        ( { model with draft = ""; error = None }
+        , [ background (Persist (Update_title { id; title })) ] )
     | Action.Toggle id -> model, [ background (Persist (Toggle id)) ]
     | Action.Delete id -> model, [ background (Persist (Delete id)) ]
     | Action.Subscribe_query { id; query } ->

@@ -95,6 +95,17 @@ let test_toggle_and_delete_schedule_background_writes () =
   | _ -> fail "delete must issue a delete write"
 ;;
 
+let test_update_title_trims_and_schedules_background_write () =
+  let model = { Todos.Model.initial with draft = "  Edited title  " } in
+  let model, commands =
+    Todos.Model.update model (Todos.Action.Update_title { id = "todo-1" })
+  in
+  require_equal_string model.draft "";
+  match require_one_background_command commands with
+  | Persist (Update_title { id = "todo-1"; title = "Edited title" }) -> ()
+  | _ -> fail "update title must issue an update write"
+;;
+
 let test_subscribe_and_unsubscribe_schedule_background_query_commands () =
   let model, commands =
     Todos.Model.update
@@ -324,6 +335,7 @@ let () =
   ; "submit trims and writes in background", test_submit_trims_and_schedules_background_write
   ; "blank submit is ignored", test_blank_submit_is_ignored
   ; "toggle and delete are background writes", test_toggle_and_delete_schedule_background_writes
+  ; "update title trims and writes in background", test_update_title_trims_and_schedules_background_write
   ; ( "subscribe and unsubscribe are background query commands"
     , test_subscribe_and_unsubscribe_schedule_background_query_commands )
   ; "loaded and failed update Bonsai-owned state", test_loaded_and_failed_update_bonsai_owned_state

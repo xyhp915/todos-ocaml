@@ -20,7 +20,7 @@ The opam file pins the upgraded dependency revisions:
 
 - `persistent_sorted_set_ocaml`: `83a3483bc6406337a1c0f60ac1813d8339a94c42`
 - `datascript_ocaml`: `40308e1cd6573cdfa840a28518ed0fcac7f8832e`
-- `bonsai_native` / `bonsai_apple`: `11c074fcc5064cde90104e565e4d3585786b5ac9`
+- `bonsai_native` / `bonsai_apple`: `b2137d09ec94d71cc6a52a65f47fb569464eb3b1`
 
 ```sh
 opam install . --deps-only --with-test

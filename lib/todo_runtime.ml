@@ -112,7 +112,7 @@ module Runtime = struct
   ;;
 
   let affected_queries = function
-    | Store_write.Add _ | Toggle _ | Delete _ -> [ Query.List_todos ]
+    | Store_write.Add _ | Toggle _ | Delete _ | Update_title _ -> [ Query.List_todos ]
   ;;
 
   let subscriber_notifications session store queries =

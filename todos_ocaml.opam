@@ -24,8 +24,8 @@ depends: [
 pin-depends: [
   ["persistent_sorted_set_ocaml.dev" "git+https://github.com/logseq/persistent-sorted-set-ocaml.git#83a3483bc6406337a1c0f60ac1813d8339a94c42"]
   ["datascript_ocaml.dev" "git+https://github.com/logseq/datascript-ocaml.git#f9e0ab7cc41a9b3ebf402b40bc1a6a21caf76929"]
-  ["bonsai_native.dev" "git+https://github.com/logseq/bonsai-native.git#11c074fcc5064cde90104e565e4d3585786b5ac9"]
-  ["bonsai_apple.dev" "git+https://github.com/logseq/bonsai-native.git#11c074fcc5064cde90104e565e4d3585786b5ac9"]
+  ["bonsai_native.dev" "git+https://github.com/logseq/bonsai-native.git#b2137d09ec94d71cc6a52a65f47fb569464eb3b1"]
+  ["bonsai_apple.dev" "git+https://github.com/logseq/bonsai-native.git#b2137d09ec94d71cc6a52a65f47fb569464eb3b1"]
 ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
