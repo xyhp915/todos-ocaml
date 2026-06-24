@@ -83,16 +83,6 @@ let todo_row ~dispatch ?on_select (todo : Todos.Todo.t) =
     }
 ;;
 
-let content_for todos ~empty_title ~dispatch =
-  match todos with
-  | [] -> empty_state empty_title
-  | todos ->
-    Apple.list
-      todos
-      ~key:(fun (todo : Todos.Todo.t) -> todo.id)
-      ~row:(todo_row ~dispatch)
-;;
-
 let route_row ~selected ~on_select route =
   let title = Route.title route in
   Apple.list_row
@@ -187,34 +177,8 @@ let split_view model controls ~dispatch =
        ]
 ;;
 
-let tab_view model ~dispatch =
-  let active = Screen.active_todos model.Todos.Model.todos in
-  let completed = Screen.completed_todos model.todos in
-  Apple.tab_view
-    ~selected:"today"
-    ~on_select:(fun _ -> dispatch Todos.Action.Load)
-    [ Apple.tab
-        ~id:"today"
-        ~title:"Today"
-        ~system_image:"checklist"
-        (Apple.vstack
-           ~spacing:12.
-           [ add_bar model ~dispatch
-           ; content_for active ~empty_title:"All clear" ~dispatch
-           ]
-         |> Apple.padding)
-    ; Apple.tab
-        ~id:"done"
-        ~title:"Done"
-        ~system_image:"checkmark.circle"
-        (content_for completed ~empty_title:"No completed tasks" ~dispatch)
-    ]
-;;
-
 let view ?(controls = default_controls) ({ model; dispatch } : Todos.Controller.t) =
-  if List.length model.todos > 0 || not (String.is_empty controls.search)
-  then split_view model controls ~dispatch
-  else tab_view model ~dispatch
+  split_view model controls ~dispatch
 ;;
 
 let component ?(run_command = Todos.Controller.ignore_command) graph =

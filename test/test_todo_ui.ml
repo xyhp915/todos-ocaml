@@ -29,10 +29,12 @@ let render ?(controls = Todo_ui.default_controls) model =
   Backend.show (Renderer.view mounted)
 ;;
 
-let test_empty_model_renders_composer_tabs () =
+let test_empty_model_renders_split_view_composer_and_search () =
   let output = render Todos.Model.initial in
-  assert_contains "today tab" output ~substring:"today:Today:checklist";
-  assert_contains "done tab" output ~substring:"done:Done:checkmark.circle";
+  assert_contains "all route" output ~substring:"Tasks";
+  assert_contains "active route" output ~substring:"Active";
+  assert_contains "completed route" output ~substring:"Completed";
+  assert_contains "searchable" output ~substring:"searchable";
   assert_contains "composer" output ~substring:"placeholder=\"New task\""
 ;;
 
@@ -69,7 +71,7 @@ let test_search_filters_visible_tasks () =
 ;;
 
 let () =
-  test_empty_model_renders_composer_tabs ();
+  test_empty_model_renders_split_view_composer_and_search ();
   test_loaded_model_renders_split_view_and_tasks ();
   test_search_filters_visible_tasks ()
 ;;
