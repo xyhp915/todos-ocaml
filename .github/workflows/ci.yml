@@ -29,12 +29,6 @@ jobs:
         with:
           ocaml-compiler: 5.4.1
 
-      - name: Add Jane Street preview repositories
-        run: |
-          opam repo add janestreet-bleeding-external git+https://github.com/janestreet/opam-repository.git#external-packages
-          opam repo add janestreet-bleeding git+https://github.com/janestreet/opam-repository.git
-          opam update
-
       - name: Pin unpublished git dependencies
         run: |
           opam pin add --no-action persistent_sorted_set_ocaml.dev 'git+https://github.com/logseq/persistent-sorted-set-ocaml.git#074401d81ca22b9d44c725d7f171a67d69765a31'
