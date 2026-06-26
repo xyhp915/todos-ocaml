@@ -132,4 +132,4 @@ grep -q "@sqlite.org/sqlite-wasm" web/sqlite_worker_runtime.js
 grep -q "melange-transit.melange/transit.js" web/dist/web/todos_web.js
 test -s web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
 grep -q "melange-transit.melange/transit.js" web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
-grep -q "transit-js" web/dist/node_modules/melange-transit/transit.js
+grep -q "transit-js" web/dist/node_modules/melange-transit.melange/transit.js
