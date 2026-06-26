@@ -161,42 +161,6 @@ let test_datascript_store_roundtrip () =
   require_todos (list store)
     [ todo ~id:"todo-2" ~title:"Mac app" ~completed:true ~created_at_ms:20 () ]
 
-let test_storage_codec_encodes_datascript_payloads_as_transit () =
-  let open Todos.Store in
-  let encoded_payloads = String.Table.create () in
-  let storage : Ds.storage =
-    {
-      storage_store =
-        (fun entries ->
-          List.iter entries ~f:(fun (address, payload) ->
-              Hashtbl.set encoded_payloads ~key:address
-                ~data:(Todos.Storage_codec.encode payload)));
-      storage_restore =
-        (fun address ->
-          Hashtbl.find encoded_payloads address
-          |> Option.map ~f:Todos.Storage_codec.decode);
-      storage_list_addresses =
-        (fun () ->
-          Hashtbl.keys encoded_payloads |> List.sort ~compare:String.compare);
-      storage_delete =
-        (fun addresses ->
-          List.iter addresses ~f:(fun address ->
-              Hashtbl.remove encoded_payloads address));
-    }
-  in
-  let store = empty ~storage () in
-  Ds.store ~storage store;
-  let _store =
-    apply_write store
-      (Add (todo ~id:"todo-1" ~title:"Transit payload" ~created_at_ms:100 ()))
-  in
-  let restored = restore_or_create storage in
-  require_todos (list restored)
-    [ todo ~id:"todo-1" ~title:"Transit payload" ~created_at_ms:100 () ];
-  let root_payload = Hashtbl.find_exn encoded_payloads "0" in
-  if not (String.is_prefix root_payload ~prefix:"[\"^ \"") then
-    fail "storage payload must be transit JSON"
-
 let test_restore_or_create_reports_unreadable_non_empty_storage () =
   let storage : Todos.Store.Ds.storage =
     {
@@ -330,8 +294,6 @@ let () =
     ( "loaded and failed update controller state",
       test_loaded_and_failed_update_controller_state );
     ("DataScript store roundtrip", test_datascript_store_roundtrip);
-    ( "storage codec encodes DataScript payloads as transit",
-      test_storage_codec_encodes_datascript_payloads_as_transit );
     ( "restore_or_create reports unreadable non-empty storage",
       test_restore_or_create_reports_unreadable_non_empty_storage );
     ( "screen model filters routes search and selection",

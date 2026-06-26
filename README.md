@@ -7,7 +7,7 @@ Cross-platform todo app built with `datascript-ocaml` for shared domain state,
 
 - Shared todo state, actions, screen model, and DataScript store in
   `lib/todo_core.ml`.
-- Native SQLite runtime adapter in `lib/todo_runtime.ml`.
+- Native runtime opens storage from `datascript_ocaml.sqlite`.
 - Native Apple UI in `lib/todo_ui.ml`.
 - iOS SwiftUI entrypoint in `app/ios_app.ml`.
 - macOS SwiftUI desktop entrypoint in `app/mac_app.ml`.
@@ -18,8 +18,7 @@ Cross-platform todo app built with `datascript-ocaml` for shared domain state,
 
 The opam file pins the upgraded dependency revisions:
 
-- `persistent_sorted_set_ocaml`: `074401d81ca22b9d44c725d7f171a67d69765a31`
-- `datascript_ocaml`: `77994f1859acb36420de919e3f6487f9236ce92e`
+- `datascript_ocaml`: `cd80734773913f821484e0fc5d4a99391ad0122d`
 - `bonsai_native` / `bonsai_apple`: `e8b6e13db0fba9ebf49a35591204e14f3e3b32e6`
 
 ```sh

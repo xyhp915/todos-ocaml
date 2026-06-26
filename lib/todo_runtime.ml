@@ -1,42 +1,12 @@
 open! Todo_std
 include Todo_core
-module Ds = Datascript
 
 module Store = struct
   include Todo_core.Store
 
-  module Sqlite_storage = struct
-    external sqlite_store : string -> (string * string) list -> unit
-      = "todos_ocaml_todos_sqlite_store"
-
-    external sqlite_restore : string -> string -> string option
-      = "todos_ocaml_todos_sqlite_restore"
-
-    external sqlite_list_addresses : string -> string list
-      = "todos_ocaml_todos_sqlite_list_addresses"
-
-    external sqlite_delete : string -> string list -> unit
-      = "todos_ocaml_todos_sqlite_delete"
-
-    let store path entries =
-      sqlite_store path
-        (List.map entries ~f:(fun (address, payload) ->
-             (address, Storage_codec.encode payload)))
-
-    let restore path address =
-      Option.map (sqlite_restore path address) ~f:Storage_codec.decode
-
-    let create path : Ds.storage =
-      {
-        storage_store = store path;
-        storage_restore = restore path;
-        storage_list_addresses = (fun () -> sqlite_list_addresses path);
-        storage_delete = sqlite_delete path;
-      }
-  end
-
   let open_sqlite ~path =
-    let storage = Sqlite_storage.create path in
+    let sqlite = Datascript_sqlite.open_session path in
+    let storage = Datascript_sqlite.storage sqlite in
     restore_or_create storage
 end
 

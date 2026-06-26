@@ -2,19 +2,18 @@
  (name todos_ocaml_core)
  (public_name todos_ocaml.core)
  (wrapped false)
- (modules todo_core todo_std todos_transit)
- (libraries bonsai_native datascript_ocaml persistent_sorted_set_ocaml))
+ (modules todo_core todo_std)
+ (libraries bonsai_native datascript_ocaml))
 
 (library
  (name todos)
  (public_name todos_ocaml)
  (modules todo_runtime)
- (foreign_stubs
-  (language c)
-  (names todo_datascript_sqlite_stubs))
- (c_library_flags
-  (:standard -lsqlite3))
- (libraries bonsai_native datascript_ocaml todos_ocaml.core threads.posix))
+ (libraries
+  bonsai_native
+  datascript_ocaml.sqlite
+  todos_ocaml.core
+  threads.posix))
 
 (library
  (name todos_ocaml_apple_ui)

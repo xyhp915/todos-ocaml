@@ -10,15 +10,13 @@ depends: [
   "ocaml" {>= "5.4.1"}
   "dune" {>= "3.17"}
   "datascript_ocaml"
-  "persistent_sorted_set_ocaml"
   "melange"
   "melange-transit"
   "bonsai_native"
   "bonsai_apple"
 ]
 pin-depends: [
-  ["persistent_sorted_set_ocaml.dev" "git+https://github.com/logseq/persistent-sorted-set-ocaml.git#074401d81ca22b9d44c725d7f171a67d69765a31"]
-  ["datascript_ocaml.dev" "git+https://github.com/logseq/datascript-ocaml.git#77994f1859acb36420de919e3f6487f9236ce92e"]
+  ["datascript_ocaml.dev" "git+https://github.com/logseq/datascript-ocaml.git#cd80734773913f821484e0fc5d4a99391ad0122d"]
   ["bonsai_native.dev" "git+https://github.com/logseq/bonsai-native.git#e8b6e13db0fba9ebf49a35591204e14f3e3b32e6"]
   ["bonsai_apple.dev" "git+https://github.com/logseq/bonsai-native.git#e8b6e13db0fba9ebf49a35591204e14f3e3b32e6"]
 ]

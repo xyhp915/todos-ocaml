@@ -38,6 +38,36 @@ if ! grep -R "datascript_ocaml.melange_storage" web/dune >/dev/null; then
   exit 1
 fi
 
+if [ -e lib/todo_datascript_sqlite_stubs.c ]; then
+  echo "SQLite C stubs should live in datascript_ocaml.sqlite, not the app" >&2
+  exit 1
+fi
+
+if rg -n "foreign_stubs|c_library_flags" lib/dune >/dev/null; then
+  echo "App library should not own SQLite foreign stubs or C linker flags" >&2
+  exit 1
+fi
+
+if ! grep -R "datascript_ocaml.sqlite" lib/dune >/dev/null; then
+  echo "App library should link datascript_ocaml.sqlite" >&2
+  exit 1
+fi
+
+if rg -n "Storage_codec|Todos_transit|todos_transit" lib test/*.ml >/dev/null; then
+  echo "Transit storage codecs should live in datascript packages, not the app" >&2
+  exit 1
+fi
+
+if rg -n "Storage_codec|external sqlite_|todos_ocaml_todos_sqlite" lib/todo_runtime.ml >/dev/null; then
+  echo "Runtime should use datascript_ocaml.sqlite instead of app-level SQLite codecs or externals" >&2
+  exit 1
+fi
+
+if rg -n "persistent_sorted_set_ocaml" dune-project todos_ocaml.opam lib/dune app/dune web/dune >/dev/null; then
+  echo "App should not depend directly on persistent_sorted_set_ocaml" >&2
+  exit 1
+fi
+
 if grep -R "localStorage\\|getItem\\|setItem" web/todos_web.ml >/dev/null; then
   echo "Web UI should not persist state directly in localStorage" >&2
   exit 1

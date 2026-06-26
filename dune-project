@@ -12,7 +12,6 @@
   (ocaml (>= 5.4.1))
   (dune (>= 3.17))
   datascript_ocaml
-  persistent_sorted_set_ocaml
   melange
   melange-transit
   bonsai_native
