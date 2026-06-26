@@ -6,9 +6,10 @@
     "dev": "vite --host 127.0.0.1"
   },
   "dependencies": {
-    "vite": "^7.0.0",
+    "@sqlite.org/sqlite-wasm": "3.53.0-build1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "devDependencies": {}
+    "react-dom": "^19.0.0",
+    "transit-js": "^0.8.874",
+    "vite": "^7.0.0"
+  }
 }

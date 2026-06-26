@@ -50,8 +50,7 @@
 
 (rule
  (target BonsaiNativeSwiftUIMac.o)
- (deps
-  /Users/tiensonqin/Codes/projects/bonsai-native/apple/swiftui/BonsaiNativeSwiftUIMac.swift)
+ (deps %{lib:bonsai_apple:swiftui/BonsaiNativeSwiftUIMac.swift})
  (enabled_if
   (= %{context_name} simulator))
  (action
@@ -70,8 +69,7 @@
 
 (rule
  (target BonsaiNativeSwiftUI.o)
- (deps
-  /Users/tiensonqin/Codes/projects/bonsai-native/apple/swiftui/BonsaiNativeSwiftUI.swift)
+ (deps %{lib:bonsai_apple:swiftui/BonsaiNativeSwiftUI.swift})
  (enabled_if
   (or
    (= %{context_name} device.ios)

@@ -11,16 +11,16 @@ Cross-platform todo app built with `datascript-ocaml` for shared domain state,
 - Native Apple UI in `lib/todo_ui.ml`.
 - iOS SwiftUI entrypoint in `app/ios_app.ml`.
 - macOS SwiftUI desktop entrypoint in `app/mac_app.ml`.
-- Web UI and SQLite wasm worker in `web/`.
+- Web UI in `web/`, with a SQLite wasm worker and Transit JSON codecs.
 - Focused tests in `test/`.
 
 ## Local dependencies
 
 The opam file pins the upgraded dependency revisions:
 
-- `persistent_sorted_set_ocaml`: `83a3483bc6406337a1c0f60ac1813d8339a94c42`
-- `datascript_ocaml`: `40308e1cd6573cdfa840a28518ed0fcac7f8832e`
-- `bonsai_native` / `bonsai_apple`: `2610e1187b0c0697962a8f33bc05d256cde6de57`
+- `persistent_sorted_set_ocaml`: `074401d81ca22b9d44c725d7f171a67d69765a31`
+- `datascript_ocaml`: `77994f1859acb36420de919e3f6487f9236ce92e`
+- `bonsai_native` / `bonsai_apple`: `e8b6e13db0fba9ebf49a35591204e14f3e3b32e6`
 
 ```sh
 opam install . --deps-only --with-test

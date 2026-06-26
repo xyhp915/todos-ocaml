@@ -10,6 +10,8 @@ export default defineConfig({
     alias: {
       bonsai_native: path.join(generatedNodeModules, "bonsai_native"),
       melange: path.join(generatedNodeModules, "melange"),
+      "melange-edn": path.join(generatedNodeModules, "melange-edn"),
+      "melange-transit": path.join(generatedNodeModules, "melange-transit"),
       "melange.js": path.join(generatedNodeModules, "melange.js"),
     },
   },

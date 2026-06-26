@@ -1,8 +1,11 @@
 #!/bin/sh
 set -eu
 
-script_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
-repo_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+if [ -z "$repo_root" ] || [ ! -f "$repo_root/web/package.json" ]; then
+  script_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+  repo_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
+fi
 cd "$repo_root"
 
 if grep -R "bonsai_web\\|js_of_ocaml\\|bonsai.ppx_bonsai" dune-project todos_ocaml.opam lib/dune web/dune >/dev/null; then
@@ -15,10 +18,77 @@ if grep -ER 'ppx_jane|core_kernel|"core"|\(core([[:space:]]|\))|^[[:space:]]*cor
   exit 1
 fi
 
+if ! grep -R "melange-transit" dune-project todos_ocaml.opam >/dev/null; then
+  echo "Dune/opam config should depend on melange-transit" >&2
+  exit 1
+fi
+
+if ! grep -R "melange-transit" web/dune >/dev/null; then
+  echo "Web demo should link melange-transit" >&2
+  exit 1
+fi
+
+if ! grep -R "datascript_ocaml" web/dune >/dev/null; then
+  echo "Web demo should link datascript-ocaml" >&2
+  exit 1
+fi
+
+if ! grep -R "datascript_ocaml.melange_storage" web/dune >/dev/null; then
+  echo "Web demo should link the datascript melange storage codec" >&2
+  exit 1
+fi
+
+if grep -R "localStorage\\|getItem\\|setItem" web/todos_web.ml >/dev/null; then
+  echo "Web UI should not persist state directly in localStorage" >&2
+  exit 1
+fi
+
+if ! grep -R "todos_db_worker" web/dune web/todos_web.ml >/dev/null; then
+  echo "Web demo should build and start the SQLite worker" >&2
+  exit 1
+fi
+
+if ! grep -R "@sqlite.org/sqlite-wasm" web/package.json >/dev/null; then
+  echo "Web demo should depend on SQLite wasm" >&2
+  exit 1
+fi
+
+if rg -n "todos_ocaml_kv" lib web >/dev/null; then
+  echo "SQLite storage table should be named kvs" >&2
+  exit 1
+fi
+
+if ! rg -n "create table if not exists kvs" lib web >/dev/null; then
+  echo "SQLite storage should create the kvs table" >&2
+  exit 1
+fi
+
+if rg -n '/Users/|git\\+file|file://' dune-project todos_ocaml.opam app/dune lib/dune web/dune web/package.json README.md web/README.md >/dev/null; then
+  echo "Project config and docs should not reference local filesystem dependencies" >&2
+  exit 1
+fi
+
+if rg -n 'git\\+https://github.com/[^\"#]+\\.git\"' todos_ocaml.opam >/dev/null; then
+  echo "GitHub pin-depends should include immutable commit hashes" >&2
+  exit 1
+fi
+
+if ! grep -q '%{lib:bonsai_apple:' app/dune; then
+  echo "Apple app should load Swift sources from installed bonsai_apple package data" >&2
+  exit 1
+fi
+
 test -s web/dist/web/todos_web.js
+test -s web/dist/web/todos_db_worker.js
 test -s web/dist/web/react_runtime.js
 
 grep -q "createRenderer" web/dist/web/todos_web.js
 grep -q "New task" web/dist/web/todos_web.js
 grep -q "createRoot" web/dist/web/react_runtime.js
 grep -q "Todos" web/dist/web/react_runtime.js
+grep -q "todos_db_worker" web/dist/web/db_worker_client.js
+grep -q "@sqlite.org/sqlite-wasm" web/dist/web/sqlite_worker_runtime.js
+grep -q "melange-transit/transit.js" web/dist/web/todos_web.js
+test -s web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
+grep -q "melange-transit/transit.js" web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
+grep -q "transit-js" web/dist/node_modules/melange-transit/transit.js

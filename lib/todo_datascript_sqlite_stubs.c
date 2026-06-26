@@ -85,7 +85,7 @@ static void ensure_schema(sqlite3 *db)
 {
   exec_sql(
     db,
-    "create table if not exists todos_ocaml_kv "
+    "create table if not exists kvs "
     "(address text primary key not null, payload text not null);");
 }
 
@@ -103,7 +103,7 @@ CAMLprim value todos_ocaml_todos_sqlite_store(value raw_path, value raw_entries)
   CAMLparam2(raw_path, raw_entries);
   sqlite3 *db = open_db(raw_path);
   sqlite3_stmt *stmt = NULL;
-  const char *sql = "replace into todos_ocaml_kv (address, payload) values (?, ?);";
+  const char *sql = "replace into kvs (address, payload) values (?, ?);";
 
   ensure_schema(db);
   exec_sql(db, "begin immediate transaction;");
@@ -138,7 +138,7 @@ CAMLprim value todos_ocaml_todos_sqlite_restore(value raw_path, value raw_addres
   CAMLlocal2(payload, result);
   sqlite3 *db = open_db(raw_path);
   sqlite3_stmt *stmt = NULL;
-  const char *sql = "select payload from todos_ocaml_kv where address = ?;";
+  const char *sql = "select payload from kvs where address = ?;";
 
   ensure_schema(db);
   check_sqlite(db, sqlite3_prepare_v2(db, sql, -1, &stmt, NULL), sql);
@@ -169,7 +169,7 @@ CAMLprim value todos_ocaml_todos_sqlite_list_addresses(value raw_path)
   CAMLlocal3(result, cell, address);
   sqlite3 *db = open_db(raw_path);
   sqlite3_stmt *stmt = NULL;
-  const char *sql = "select address from todos_ocaml_kv order by address desc;";
+  const char *sql = "select address from kvs order by address desc;";
 
   ensure_schema(db);
   check_sqlite(db, sqlite3_prepare_v2(db, sql, -1, &stmt, NULL), sql);
@@ -200,7 +200,7 @@ CAMLprim value todos_ocaml_todos_sqlite_delete(value raw_path, value raw_address
   CAMLparam2(raw_path, raw_addresses);
   sqlite3 *db = open_db(raw_path);
   sqlite3_stmt *stmt = NULL;
-  const char *sql = "delete from todos_ocaml_kv where address = ?;";
+  const char *sql = "delete from kvs where address = ?;";
 
   ensure_schema(db);
   check_sqlite(db, sqlite3_prepare_v2(db, sql, -1, &stmt, NULL), sql);
