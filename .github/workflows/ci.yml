@@ -22,7 +22,7 @@ jobs:
       - name: Install system dependencies
         run: |
           brew update
-          brew install pkg-config sqlite
+          brew install pkg-config ripgrep sqlite
 
       - name: Set up OCaml
         uses: ocaml/setup-ocaml@v3
