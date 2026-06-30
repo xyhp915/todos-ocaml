@@ -1,0 +1,6 @@
+{
+  "ocaml.sandbox": {
+    "kind": "opam",
+    "switch": "simulator-5.4.1"
+  }
+}

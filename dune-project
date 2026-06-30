@@ -8,6 +8,14 @@
  (package (name datascript_ocaml)))
 
 (pin
+ (url "git+https://github.com/logseq/persistent-sorted-set-ocaml.git#074401d81ca22b9d44c725d7f171a67d69765a31")
+ (package (name persistent_sorted_set_ocaml)))
+
+(pin
+ (url "git+https://github.com/RCmerci/melange-edn.git#bdc79c1d1d6edc9b0874113759bee29ce45f53f5")
+ (package (name melange-edn)))
+
+(pin
  (url "git+https://github.com/RCmerci/melange-transit.git#f8388857a1e2c8d53b00dc968ad7bb333be882c3")
  (package (name melange-transit)))
 

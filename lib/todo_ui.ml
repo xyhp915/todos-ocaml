@@ -278,7 +278,7 @@ let mobile_dashboard model controls ~dispatch =
   let header =
     Apple.vstack ~spacing:4.
       [
-        Apple.text ~style:Title2 ~weight:Semibold "Good morning";
+        Apple.text ~style:Title2 ~weight:Semibold "Good morning 🌈";
         Apple.text ~color:Secondary "Let's get things done.";
       ]
     |> mobile_header
