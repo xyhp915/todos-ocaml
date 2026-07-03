@@ -6,6 +6,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const generatedNodeModules = path.join(root, "dist", "node_modules");
 
 export default defineConfig({
+  base: "./",
   server: {
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
@@ -17,6 +18,10 @@ export default defineConfig({
     alias: {
       melange: path.join(generatedNodeModules, "melange"),
       "melange-edn": path.join(generatedNodeModules, "melange-edn"),
+      "melange-edn-melange": path.join(
+        generatedNodeModules,
+        "melange-edn-melange",
+      ),
       "melange-transit": path.join(generatedNodeModules, "melange-transit"),
       "melange-transit-melange": path.join(
         generatedNodeModules,
@@ -24,5 +29,9 @@ export default defineConfig({
       ),
       "melange.js": path.join(generatedNodeModules, "melange.js"),
     },
+  },
+  build: {
+    outDir: "tauri-dist",
+    emptyOutDir: true,
   },
 });

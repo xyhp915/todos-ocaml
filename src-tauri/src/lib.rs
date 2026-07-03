@@ -5,7 +5,7 @@ use std::sync::Mutex;
 
 use tauri::Manager;
 
-fn tauri_store_path() -> Result<PathBuf, String> {
+fn tauri_store_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     if let Some(path) = std::env::var_os("TODOS_OCAML_TAURI_STORE") {
         return Ok(PathBuf::from(path));
     }
@@ -28,6 +28,13 @@ fn tauri_store_path() -> Result<PathBuf, String> {
     let bundled_path = exe_dir.join("tauri_store");
     if bundled_path.exists() {
         return Ok(bundled_path);
+    }
+
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        let resource_path = resource_dir.join("tauri_store");
+        if resource_path.exists() {
+            return Ok(resource_path);
+        }
     }
 
     Err(format!(
@@ -82,7 +89,7 @@ struct TauriStoreDaemon {
 
 impl TauriStoreDaemon {
     fn spawn(app: &tauri::AppHandle) -> Result<Self, String> {
-        let mut child = Command::new(tauri_store_path()?)
+        let mut child = Command::new(tauri_store_path(app)?)
             .arg(db_path(app)?)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
