@@ -53,14 +53,6 @@ fn db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(app_data_dir.join("todos-ocaml.sqlite3"))
 }
 
-fn protocol_escape(value: &str) -> String {
-    value
-        .replace('\\', "\\\\")
-        .replace('\t', "\\t")
-        .replace('\n', "\\n")
-        .replace('\r', "\\r")
-}
-
 fn protocol_unescape(value: &str) -> String {
     let mut result = String::with_capacity(value.len());
     let mut chars = value.chars();
@@ -137,51 +129,14 @@ impl TauriStoreDaemon {
 }
 
 #[tauri::command]
-fn load_todos(state: tauri::State<'_, Mutex<TauriStoreDaemon>>) -> Result<String, String> {
-    state
-        .lock()
-        .map_err(|_| "OCaml Tauri store daemon lock is poisoned".to_string())?
-        .send_command(String::from("load"))
-}
-
-#[tauri::command]
-fn add_todo(
+fn ocaml_request(
     state: tauri::State<'_, Mutex<TauriStoreDaemon>>,
-    id: String,
-    title: String,
-    created_at_ms: i64,
+    payload: String,
 ) -> Result<String, String> {
     state
         .lock()
         .map_err(|_| "OCaml Tauri store daemon lock is poisoned".to_string())?
-        .send_command(format!(
-            "add\t{}\t{}\t{}",
-            protocol_escape(&id),
-            created_at_ms,
-            protocol_escape(title.trim())
-        ))
-}
-
-#[tauri::command]
-fn toggle_todo(
-    state: tauri::State<'_, Mutex<TauriStoreDaemon>>,
-    id: String,
-) -> Result<String, String> {
-    state
-        .lock()
-        .map_err(|_| "OCaml Tauri store daemon lock is poisoned".to_string())?
-        .send_command(format!("toggle\t{}", protocol_escape(&id)))
-}
-
-#[tauri::command]
-fn delete_todo(
-    state: tauri::State<'_, Mutex<TauriStoreDaemon>>,
-    id: String,
-) -> Result<String, String> {
-    state
-        .lock()
-        .map_err(|_| "OCaml Tauri store daemon lock is poisoned".to_string())?
-        .send_command(format!("delete\t{}", protocol_escape(&id)))
+        .send_command(payload)
 }
 
 pub fn run() {
@@ -196,12 +151,7 @@ pub fn run() {
             app.manage(Mutex::new(daemon));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            load_todos,
-            add_todo,
-            toggle_todo,
-            delete_todo
-        ])
+        .invoke_handler(tauri::generate_handler![ocaml_request])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");
 }

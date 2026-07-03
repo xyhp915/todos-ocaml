@@ -73,7 +73,7 @@ let parse_int value =
   | Some value -> value
   | None -> failwith ("invalid integer: " ^ value)
 
-let handle_command store line =
+let handle_request store line =
   match String.split_on_char '\t' line with
   | [ "load" ] -> (store, print_todos store)
   | [ "add"; id; created_at_ms; title ] ->
@@ -114,7 +114,7 @@ let rec daemon_loop store =
   (* daemon-loop *)
   match read_line () with
   | line -> (
-      match Result.try_with (fun () -> handle_command store line) with
+      match Result.try_with (fun () -> handle_request store line) with
       | Ok (store, payload) ->
           respond_ok payload;
           daemon_loop store

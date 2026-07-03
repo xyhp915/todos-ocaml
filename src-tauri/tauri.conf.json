@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "dev.todos-ocaml.desktop",
   "build": {
-    "beforeBuildCommand": "npm --prefix web run build && opam exec -- dune build app/tauri_store.exe",
+    "beforeBuildCommand": "sh scripts/prepare-tauri-build.sh",
     "beforeDevCommand": "opam exec -- dune build app/tauri_store.exe && npm --prefix web run dev",
     "devUrl": "http://127.0.0.1:1420",
     "frontendDist": "../web/tauri-dist"
@@ -29,7 +29,7 @@
     "active": true,
     "targets": ["app", "dmg"],
     "resources": {
-      "../_build/default/app/tauri_store.exe": "tauri_store"
+      "resources/tauri_store": "tauri_store"
     }
   }
 }

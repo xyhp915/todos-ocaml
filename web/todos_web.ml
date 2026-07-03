@@ -83,13 +83,7 @@ module Tauri_runtime = struct
     = "invokeString"
   [@@mel.module "./tauri_runtime.js"]
 
-  external empty_args : unit -> args = "" [@@mel.obj]
-
-  external add_args :
-    id:string -> title:string -> createdAtMs:int -> unit -> args = ""
-  [@@mel.obj]
-
-  external id_args : id:string -> unit -> args = "" [@@mel.obj]
+  external request_args : payload:string -> unit -> args = "" [@@mel.obj]
 end
 
 module Json = struct
@@ -223,6 +217,12 @@ let next_id () = "todo-" ^ string_of_int (current_time_ms ())
 let checkbox_class completed =
   "icon-button" ^ if completed then " checked" else ""
 
+let protocol_escape value =
+  value |> String.split_on_char '\\' |> String.concat "\\\\"
+  |> String.split_on_char '\t' |> String.concat "\\t"
+  |> String.split_on_char '\n' |> String.concat "\\n"
+  |> String.split_on_char '\r' |> String.concat "\\r"
+
 module Web_store = struct
   let post message =
     match !worker_ref with
@@ -237,23 +237,33 @@ module Web_store = struct
 end
 
 module Tauri_store = struct
+  let request payload ~on_loaded ~on_error =
+    Tauri_runtime.invoke_string "ocaml_request"
+      (Tauri_runtime.request_args ~payload ()) on_loaded on_error
+
   let load ~on_loaded ~on_error =
-    Tauri_runtime.invoke_string "load_todos" (Tauri_runtime.empty_args ())
-      on_loaded on_error
+    request "load" ~on_loaded ~on_error
 
   let add todo ~on_loaded ~on_error =
-    Tauri_runtime.invoke_string "add_todo"
-      (Tauri_runtime.add_args ~id:todo.id ~title:todo.title
-         ~createdAtMs:todo.created_at_ms ())
-      on_loaded on_error
+    request
+      (String.concat "\t"
+         [
+           "add";
+           protocol_escape todo.id;
+           string_of_int todo.created_at_ms;
+           protocol_escape todo.title;
+         ])
+      ~on_loaded ~on_error
 
   let toggle id ~on_loaded ~on_error =
-    Tauri_runtime.invoke_string "toggle_todo"
-      (Tauri_runtime.id_args ~id ()) on_loaded on_error
+    request
+      (String.concat "\t" [ "toggle"; protocol_escape id ])
+      ~on_loaded ~on_error
 
   let delete id ~on_loaded ~on_error =
-    Tauri_runtime.invoke_string "delete_todo"
-      (Tauri_runtime.id_args ~id ()) on_loaded on_error
+    request
+      (String.concat "\t" [ "delete"; protocol_escape id ])
+      ~on_loaded ~on_error
 end
 
 let use_tauri_store () = Tauri_runtime.is_available ()

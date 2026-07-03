@@ -40,6 +40,7 @@
   ../web/dune
   ../web/todos_web.ml
   ../web/tauri_runtime.js
+  ../scripts/prepare-tauri-build.sh
   ../app/dune
   ../app/tauri_store.ml
   ../src-tauri/Cargo.toml

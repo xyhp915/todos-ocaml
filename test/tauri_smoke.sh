@@ -24,6 +24,7 @@ require_file src-tauri/icons/icon.png
 require_file src-tauri/src/main.rs
 require_file app/tauri_store.ml
 require_file web/vite.config.js
+require_file scripts/prepare-tauri-build.sh
 
 require_pattern() {
   pattern=$1
@@ -65,8 +66,8 @@ assert(
 
 const webPackage = readJson("web/package.json");
 assert(
-  webPackage.scripts?.build === "opam exec -- dune build @web-demo",
-  "web build must keep using the OCaml/Melange build",
+  webPackage.scripts?.build === "opam exec -- dune build @web-demo && vite build",
+  "web build must build OCaml/Melange output and isolated Tauri assets",
 );
 assert(
   webPackage.scripts?.dev === "vite --host 127.0.0.1 --port 1420 --strictPort",
@@ -76,12 +77,12 @@ assert(
 const tauriConfig = readJson("src-tauri/tauri.conf.json");
 assert(tauriConfig.productName === "Todos OCaml", "Tauri product name is wrong");
 assert(
-  tauriConfig.identifier === "dev.todos-ocaml.app",
+  tauriConfig.identifier === "dev.todos-ocaml.desktop",
   "Tauri identifier is wrong",
 );
 assert(
   tauriConfig.build?.beforeBuildCommand ===
-    "npm --prefix web run build && opam exec -- dune build app/tauri_store.exe",
+    "sh scripts/prepare-tauri-build.sh",
   "Tauri build must invoke the existing OCaml/Melange web build and native OCaml store build",
 );
 assert(
@@ -94,8 +95,8 @@ assert(
   "Tauri dev URL must match the Vite server",
 );
 assert(
-  tauriConfig.build?.frontendDist === "../web",
-  "Tauri frontendDist must reuse the existing web app assets",
+  tauriConfig.build?.frontendDist === "../web/tauri-dist",
+  "Tauri frontendDist must use isolated production assets",
 );
 assert(
   tauriConfig.app?.withGlobalTauri === true,
@@ -104,6 +105,10 @@ assert(
 assert(
   tauriConfig.app?.windows?.[0]?.title === "Todos OCaml",
   "Tauri main window title is wrong",
+);
+assert(
+  tauriConfig.bundle?.resources?.["resources/tauri_store"] === "tauri_store",
+  "Tauri bundle must include the staged OCaml store daemon",
 );
 
 const capability = readJson("src-tauri/capabilities/default.json");
@@ -119,6 +124,17 @@ NODE
 
 require_pattern 'tauri::Builder::default\(\)' src-tauri/src "Tauri builder is missing"
 require_pattern '#\[tauri::command\]' src-tauri/src "Tauri commands are missing"
+command_count=$(rg -n '#\[tauri::command\]' src-tauri/src | wc -l | tr -d ' ')
+if [ "$command_count" != "1" ]; then
+  echo "Rust should expose exactly one generic Tauri command" >&2
+  exit 1
+fi
+require_pattern 'fn ocaml_request' src-tauri/src "Rust bridge must expose one generic ocaml_request command"
+require_pattern 'generate_handler!\[\s*ocaml_request\s*\]' src-tauri/src "Tauri handler must only register ocaml_request"
+if rg -n 'fn (load_todos|add_todo|toggle_todo|delete_todo)|"load_todos"|"add_todo"|"toggle_todo"|"delete_todo"' src-tauri/src web/todos_web.ml >/dev/null; then
+  echo "Todo operations must not be duplicated as Rust Tauri commands" >&2
+  exit 1
+fi
 require_pattern 'tauri_store' src-tauri/src "Rust bridge must launch the OCaml store daemon"
 require_pattern 'Command::new' src-tauri/src "Rust bridge must spawn a native process"
 require_pattern 'struct TauriStoreDaemon' src-tauri/src "Rust bridge must keep a daemon state object"
@@ -134,6 +150,7 @@ require_pattern 'Store.open_sqlite' app/tauri_store.ml "OCaml daemon must open t
 require_pattern 'Store.apply_write' app/tauri_store.ml "OCaml daemon must apply shared todo writes"
 require_pattern 'Store.list' app/tauri_store.ml "OCaml daemon must return todos from the shared store"
 require_pattern 'read_line' app/tauri_store.ml "OCaml store must read daemon commands from stdin"
+require_pattern 'handle_request' app/tauri_store.ml "OCaml daemon must own request dispatch"
 require_pattern 'daemon-loop' app/tauri_store.ml "OCaml store must run as a daemon loop"
 require_pattern 'Tauri_store' web/todos_web.ml "Melange UI must include the Tauri store adapter"
 require_pattern 'Web_store' web/todos_web.ml "Melange UI must keep the browser store adapter"
