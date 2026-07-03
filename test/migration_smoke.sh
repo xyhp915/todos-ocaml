@@ -78,6 +78,11 @@ if rg -n "Bonsai_native|Native\\.|render_json|hstack|vstack" web/todos_web.ml we
   exit 1
 fi
 
+if rg -n 'React\.text \(if todo\.completed then "✓"|â|œ|“' web/todos_web.ml web/dist/web/todos_web.js >/dev/null; then
+  echo "Completed checkbox state should be rendered with CSS, not a text glyph" >&2
+  exit 1
+fi
+
 if [ -e web/react_runtime.js ] || [ -e web/db_worker_client.js ]; then
   echo "Web should not keep hand-written JS bridges outside worker runtime" >&2
   exit 1
@@ -129,7 +134,7 @@ if [ -e web/dist/web/react_runtime.js ] || [ -e web/dist/web/db_worker_client.js
   exit 1
 fi
 grep -q "@sqlite.org/sqlite-wasm" web/sqlite_worker_runtime.js
-grep -q "melange-transit.melange/transit.js" web/dist/web/todos_web.js
+grep -q "melange-transit-melange/transit.js" web/dist/web/todos_web.js
 test -s web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
-grep -q "melange-transit.melange/transit.js" web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
-grep -q "transit-js" web/dist/node_modules/melange-transit.melange/transit.js
+grep -q "melange-transit-melange/transit.js" web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
+grep -q "transit-js" web/dist/node_modules/melange-transit-melange/transit.js

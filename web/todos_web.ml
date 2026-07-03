@@ -11,7 +11,7 @@ module React = struct
   external text : string -> node = "%identity"
   external empty_props : unit -> props = "" [@@mel.obj]
   external class_props : className:string -> unit -> props = "" [@@mel.obj]
-  external key_class_props : key:int -> className:string -> unit -> props = ""
+  external key_class_props : key:string -> className:string -> unit -> props = ""
   [@@mel.obj]
 
   external button_props :
@@ -72,7 +72,48 @@ module Web_worker = struct
     worker
 end
 
-type todo = { id : int; title : string; completed : bool }
+module Tauri_runtime = struct
+  type args
+
+  external is_available : unit -> bool = "isTauriRuntime"
+  [@@mel.module "./tauri_runtime.js"]
+
+  external invoke_string :
+    string -> args -> (string -> unit) -> (string -> unit) -> unit
+    = "invokeString"
+  [@@mel.module "./tauri_runtime.js"]
+
+  external empty_args : unit -> args = "" [@@mel.obj]
+
+  external add_args :
+    id:string -> title:string -> createdAtMs:int -> unit -> args = ""
+  [@@mel.obj]
+
+  external id_args : id:string -> unit -> args = "" [@@mel.obj]
+end
+
+module Json = struct
+  type native_todo
+
+  external parse_todos : string -> native_todo array = "parse"
+  [@@mel.scope "JSON"]
+
+  external id : native_todo -> string = "id" [@@mel.get]
+  external title : native_todo -> string = "title" [@@mel.get]
+  external completed : native_todo -> bool = "completed" [@@mel.get]
+  external created_at_ms : native_todo -> int = "createdAtMs" [@@mel.get]
+end
+
+module Clock = struct
+  external now : unit -> float = "now" [@@mel.scope "Date"]
+end
+
+type todo = {
+  id : string;
+  title : string;
+  completed : bool;
+  created_at_ms : int;
+}
 
 let todos = ref []
 let draft = ref ""
@@ -82,9 +123,11 @@ let worker_ref : Web_worker.t option ref = ref None
 let todo_to_transit todo =
   Transit_json.Map
     [
-      (Transit_json.Keyword "todo/id", Transit_json.Int todo.id);
+      (Transit_json.Keyword "todo/id", Transit_json.String todo.id);
       (Transit_json.Keyword "todo/title", Transit_json.String todo.title);
       (Transit_json.Keyword "todo/completed", Transit_json.Bool todo.completed);
+      ( Transit_json.Keyword "todo/created-at-ms",
+        Transit_json.Int todo.created_at_ms );
     ]
 
 let field key entries =
@@ -104,6 +147,13 @@ let int_field key entries =
   | Some (Transit_json.Int64 value) -> Some (Int64.to_int value)
   | _ -> None
 
+let id_field key entries =
+  match field key entries with
+  | Some (Transit_json.String value) -> Some value
+  | Some (Transit_json.Int value) -> Some (string_of_int value)
+  | Some (Transit_json.Int64 value) -> Some (Int64.to_string value)
+  | _ -> None
+
 let string_field key entries =
   match field key entries with
   | Some (Transit_json.String value) -> Some value
@@ -117,7 +167,7 @@ let bool_field key entries =
 let todo_of_transit = function
   | Transit_json.Map entries -> (
       match
-        (int_field "todo/id" entries, string_field "todo/title" entries)
+        (id_field "todo/id" entries, string_field "todo/title" entries)
       with
       | Some id, Some title ->
           Some
@@ -128,6 +178,10 @@ let todo_of_transit = function
                 (match bool_field "todo/completed" entries with
                 | Some completed -> completed
                 | None -> false);
+              created_at_ms =
+                (match int_field "todo/created-at-ms" entries with
+                | Some created_at_ms -> created_at_ms
+                | None -> 0);
             }
       | _ -> None)
   | _ -> None
@@ -145,21 +199,64 @@ let decode_todos payload =
   if String.equal payload "" then []
   else try payload |> Transit_json.of_string |> todos_of_transit with _ -> []
 
+let decode_native_todos payload =
+  if String.equal payload "" then []
+  else
+    try
+      payload |> Json.parse_todos |> Array.to_list
+      |> List.map (fun todo ->
+             {
+               id = Json.id todo;
+               title = Json.title todo;
+               completed = Json.completed todo;
+               created_at_ms = Json.created_at_ms todo;
+             })
+    with _ -> []
+
 let active_todos todos = List.filter (fun todo -> not todo.completed) todos
 let completed_todos todos = List.filter (fun todo -> todo.completed) todos
 
-let next_id todos =
-  todos |> List.map (fun todo -> todo.id) |> List.fold_left max 0 |> ( + ) 1
+let current_time_ms () = int_of_float (Clock.now ())
 
-let post_store_message message =
-  match !worker_ref with
-  | None -> ()
-  | Some worker -> Web_worker.post_message worker message
+let next_id () = "todo-" ^ string_of_int (current_time_ms ())
 
-let persist_todos value =
-  post_store_message ("save:" ^ encode_todos value)
+let checkbox_class completed =
+  "icon-button" ^ if completed then " checked" else ""
 
-let load_todos () = post_store_message "load"
+module Web_store = struct
+  let post message =
+    match !worker_ref with
+    | None -> ()
+    | Some worker -> Web_worker.post_message worker message
+
+  let start ~on_message =
+    worker_ref := Some (Web_worker.start ~on_message)
+
+  let save value = post ("save:" ^ encode_todos value)
+  let load () = post "load"
+end
+
+module Tauri_store = struct
+  let load ~on_loaded ~on_error =
+    Tauri_runtime.invoke_string "load_todos" (Tauri_runtime.empty_args ())
+      on_loaded on_error
+
+  let add todo ~on_loaded ~on_error =
+    Tauri_runtime.invoke_string "add_todo"
+      (Tauri_runtime.add_args ~id:todo.id ~title:todo.title
+         ~createdAtMs:todo.created_at_ms ())
+      on_loaded on_error
+
+  let toggle id ~on_loaded ~on_error =
+    Tauri_runtime.invoke_string "toggle_todo"
+      (Tauri_runtime.id_args ~id ()) on_loaded on_error
+
+  let delete id ~on_loaded ~on_error =
+    Tauri_runtime.invoke_string "delete_todo"
+      (Tauri_runtime.id_args ~id ()) on_loaded on_error
+end
+
+let use_tauri_store () = Tauri_runtime.is_available ()
 
 let rec rerender () =
   match !root_ref with
@@ -170,33 +267,60 @@ and set_draft value =
   draft := value;
   rerender ()
 
+and handle_loaded_todos loaded =
+  todos := loaded;
+  rerender ()
+
+and handle_tauri_payload payload = handle_loaded_todos (decode_native_todos payload)
+
+and handle_store_error _message = rerender ()
+
 and add_todo () =
   let title = String.trim !draft in
   if not (String.equal title "") then (
-    let updated =
-      { id = next_id !todos; title; completed = false } :: !todos
+    let todo =
+      {
+        id = next_id ();
+        title;
+        completed = false;
+        created_at_ms = current_time_ms ();
+      }
     in
-    todos := updated;
     draft := "";
-    persist_todos updated;
-    rerender ())
+    if use_tauri_store () then (
+      Tauri_store.add todo ~on_loaded:handle_tauri_payload
+        ~on_error:handle_store_error;
+      rerender ())
+    else
+      let updated = todo :: !todos in
+      todos := updated;
+      Web_store.save updated;
+      rerender ())
 
 and toggle_todo id =
-  let updated =
-    !todos
-    |> List.map (fun todo ->
-           if todo.id = id then { todo with completed = not todo.completed }
-           else todo)
-  in
-  todos := updated;
-  persist_todos updated;
-  rerender ()
+  if use_tauri_store () then
+    Tauri_store.toggle id ~on_loaded:handle_tauri_payload
+      ~on_error:handle_store_error
+  else (
+    let updated =
+      !todos
+      |> List.map (fun todo ->
+             if todo.id = id then { todo with completed = not todo.completed }
+             else todo)
+    in
+    todos := updated;
+    Web_store.save updated;
+    rerender ())
 
 and delete_todo id =
-  let updated = !todos |> List.filter (fun todo -> todo.id <> id) in
-  todos := updated;
-  persist_todos updated;
-  rerender ()
+  if use_tauri_store () then
+    Tauri_store.delete id ~on_loaded:handle_tauri_payload
+      ~on_error:handle_store_error
+  else (
+    let updated = !todos |> List.filter (fun todo -> todo.id <> id) in
+    todos := updated;
+    Web_store.save updated;
+    rerender ())
 
 and todo_row todo =
   React.element "li"
@@ -206,8 +330,11 @@ and todo_row todo =
          ())
     [
       React.element "button"
-        ~props:(React.button_props ~className:"icon-button" ~onClick:(fun () -> toggle_todo todo.id) ())
-        [ React.text (if todo.completed then "✓" else "") ];
+        ~props:
+          (React.button_props ~className:(checkbox_class todo.completed)
+             ~onClick:(fun () -> toggle_todo todo.id)
+             ())
+        [];
       React.element "span" [ React.text todo.title ];
       React.element "button"
         ~props:(React.button_props ~className:"delete-button" ~onClick:(fun () -> delete_todo todo.id) ())
@@ -273,9 +400,8 @@ and app_view () =
 let handle_store_message message =
   if String.starts_with ~prefix:"loaded:" message then (
     let payload = String.sub message 7 (String.length message - 7) in
-    todos := decode_todos payload;
-    rerender ())
-  else if String.starts_with ~prefix:"failed:" message then rerender ()
+    handle_loaded_todos (decode_todos payload))
+  else if String.starts_with ~prefix:"failed:" message then handle_store_error message
   else ()
 
 let () =
@@ -283,6 +409,11 @@ let () =
     React_dom.create_root (React_dom.document_get_element_by_id "app")
   in
   root_ref := Some root;
-  worker_ref := Some (Web_worker.start ~on_message:handle_store_message);
-  rerender ();
-  load_todos ()
+  if use_tauri_store () then (
+    rerender ();
+    Tauri_store.load ~on_loaded:handle_tauri_payload
+      ~on_error:handle_store_error)
+  else (
+    Web_store.start ~on_message:handle_store_message;
+    rerender ();
+    Web_store.load ())

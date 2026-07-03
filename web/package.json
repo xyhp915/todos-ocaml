@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "build": "opam exec -- dune build @web-demo",
-    "dev": "vite --host 127.0.0.1"
+    "dev": "vite --host 127.0.0.1 --port 1420 --strictPort"
   },
   "dependencies": {
     "@sqlite.org/sqlite-wasm": "3.53.0-build1",

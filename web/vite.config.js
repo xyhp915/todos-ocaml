@@ -18,6 +18,10 @@ export default defineConfig({
       melange: path.join(generatedNodeModules, "melange"),
       "melange-edn": path.join(generatedNodeModules, "melange-edn"),
       "melange-transit": path.join(generatedNodeModules, "melange-transit"),
+      "melange-transit-melange": path.join(
+        generatedNodeModules,
+        "melange-transit-melange",
+      ),
       "melange.js": path.join(generatedNodeModules, "melange.js"),
     },
   },

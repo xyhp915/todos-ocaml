@@ -1,0 +1,16 @@
+[package]
+name = "todos-ocaml-tauri"
+version = "0.1.0"
+description = "Tauri shell for the Todos OCaml Melange React UI"
+authors = ["Todos OCaml contributors"]
+edition = "2021"
+
+[lib]
+name = "todos_ocaml_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }

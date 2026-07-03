@@ -108,6 +108,7 @@ ul {
 }
 
 .icon-button {
+  position: relative;
   width: 30px;
   height: 30px;
   border: 1px solid #c8d0d9;
@@ -115,6 +116,23 @@ ul {
   background: white;
   color: #2563eb;
   cursor: pointer;
+}
+
+.icon-button.checked {
+  border-color: #2563eb;
+  background: #2563eb;
+}
+
+.icon-button.checked::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 5px;
+  width: 8px;
+  height: 14px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .delete-button {
