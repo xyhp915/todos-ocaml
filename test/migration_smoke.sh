@@ -8,6 +8,51 @@ if [ -z "$repo_root" ] || [ ! -f "$repo_root/web/package.json" ]; then
 fi
 cd "$repo_root"
 
+require_file() {
+  if [ ! -s "$1" ]; then
+    echo "Missing required file: $1" >&2
+    exit 1
+  fi
+}
+
+require_contains() {
+  pattern=$1
+  path=$2
+  message=$3
+  if ! grep -q "$pattern" "$path"; then
+    echo "$message" >&2
+    exit 1
+  fi
+}
+
+require_any_contains() {
+  path=$1
+  message=$2
+  shift 2
+  for pattern in "$@"; do
+    if grep -q "$pattern" "$path"; then
+      return 0
+    fi
+  done
+  echo "$message" >&2
+  exit 1
+}
+
+require_any_file_contains() {
+  message=$1
+  shift
+  while [ "$#" -gt 1 ]; do
+    path=$1
+    pattern=$2
+    if [ -s "$path" ] && grep -q "$pattern" "$path"; then
+      return 0
+    fi
+    shift 2
+  done
+  echo "$message" >&2
+  exit 1
+}
+
 if grep -R "bonsai_web\\|js_of_ocaml\\|bonsai.ppx_bonsai" dune-project todos_ocaml.opam lib/dune web/dune >/dev/null; then
   echo "Dune/opam config should not depend on Bonsai Web, js_of_ocaml, or Bonsai ppx" >&2
   exit 1
@@ -123,18 +168,26 @@ if ! grep -q '%{lib:bonsai_apple:' app/dune; then
   exit 1
 fi
 
-test -s web/dist/web/todos_web.js
-test -s web/dist/web/todos_db_worker.js
+require_file web/dist/web/todos_web.js
+require_file web/dist/web/todos_db_worker.js
 
-grep -q "New task" web/dist/web/todos_web.js
-grep -q "Todos" web/dist/web/todos_web.js
-grep -q "createRoot" web/dist/web/todos_web.js
+require_contains "New task" web/dist/web/todos_web.js "Web dist should contain the task input placeholder"
+require_contains "Todos" web/dist/web/todos_web.js "Web dist should contain the app title"
+require_contains "createRoot" web/dist/web/todos_web.js "Web dist should render through React createRoot"
 if [ -e web/dist/web/react_runtime.js ] || [ -e web/dist/web/db_worker_client.js ]; then
   echo "Web dist should not include hand-written JS bridges outside worker runtime" >&2
   exit 1
 fi
-grep -q "@sqlite.org/sqlite-wasm" web/sqlite_worker_runtime.js
-grep -q "melange-transit-melange/transit.js" web/dist/web/todos_web.js
-test -s web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
-grep -q "melange-transit-melange/transit.js" web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
-grep -q "transit-js" web/dist/node_modules/melange-transit-melange/transit.js
+require_contains "@sqlite.org/sqlite-wasm" web/sqlite_worker_runtime.js "SQLite worker runtime should import sqlite-wasm"
+require_any_contains web/dist/web/todos_web.js \
+  "Web dist should import the generated melange-transit package" \
+  "melange-transit-melange/transit.js" \
+  "melange-transit.melange/transit.js"
+require_file web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
+require_any_contains web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js \
+  "Datascript melange storage should import the generated melange-transit package" \
+  "melange-transit-melange/transit.js" \
+  "melange-transit.melange/transit.js"
+require_any_file_contains "Generated melange-transit package should import transit-js" \
+  web/dist/node_modules/melange-transit-melange/transit.js "transit-js" \
+  web/dist/node_modules/melange-transit.melange/transit.js "transit-js"
