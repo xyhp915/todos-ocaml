@@ -39,6 +39,12 @@ export function setupLiquidGlass() {
     });
 }
 
+export function setupNativeSidebar() {
+  if (isTauriRuntime()) {
+    document.documentElement.classList.add("tauri-native-sidebar");
+  }
+}
+
 function setupWindowDrag() {
   if (globalThis.__TODOS_OCAML_WINDOW_DRAG_INSTALLED) {
     return;
@@ -73,6 +79,26 @@ export function setupNativeSearch(onChange) {
   globalThis.__TODOS_OCAML_NATIVE_SEARCH = (value) => {
     onChange(String(value ?? ""));
   };
+}
+
+export function setupNativeMenu(onDelete) {
+  globalThis.__TODOS_OCAML_NATIVE_MENU = (event) => {
+    if (event?.action === "delete") {
+      onDelete(String(event.id ?? ""));
+    }
+  };
+}
+
+export function showTodoContextMenu(todoId, x, y, onError) {
+  const invoke = globalThis.__TAURI__?.core?.invoke;
+  if (typeof invoke !== "function") {
+    onError("Tauri invoke API is not available");
+    return;
+  }
+
+  invoke("show_todo_context_menu", { todoId, x, y }).catch((error) =>
+    onError(String(error?.message ?? error)),
+  );
 }
 
 export function invokeString(command, args, onSuccess, onError) {

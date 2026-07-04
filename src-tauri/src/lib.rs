@@ -5,9 +5,11 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::Mutex;
 
+use tauri::menu::{Menu, MenuItem};
 use tauri::Manager;
 
 mod native_search;
+mod native_sidebar;
 
 fn tauri_store_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     if let Some(path) = std::env::var_os("TODOS_OCAML_TAURI_STORE") {
@@ -77,6 +79,25 @@ fn protocol_unescape(value: &str) -> String {
     result
 }
 
+fn todo_counts(payload: &str) -> Option<(u64, u64)> {
+    let todos = serde_json::from_str::<serde_json::Value>(payload).ok()?;
+    let todos = todos.as_array()?;
+    let mut active = 0;
+    let mut completed = 0;
+    for todo in todos {
+        if todo
+            .get("completed")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+        {
+            completed += 1;
+        } else {
+            active += 1;
+        }
+    }
+    Some((active, completed))
+}
+
 struct TauriStoreDaemon {
     _child: Child,
     child_stdin: ChildStdin,
@@ -134,13 +155,40 @@ impl TauriStoreDaemon {
 
 #[tauri::command]
 fn ocaml_request(
+    window: tauri::WebviewWindow,
     state: tauri::State<'_, Mutex<TauriStoreDaemon>>,
     payload: String,
 ) -> Result<String, String> {
-    state
+    let response = state
         .lock()
         .map_err(|_| "OCaml Tauri store daemon lock is poisoned".to_string())?
-        .send_command(payload)
+        .send_command(payload)?;
+    if let Some((active_count, completed_count)) = todo_counts(&response) {
+        native_sidebar::update_counts(&window, active_count, completed_count);
+    }
+    Ok(response)
+}
+
+#[tauri::command]
+fn show_todo_context_menu(
+    window: tauri::WebviewWindow,
+    todo_id: String,
+    x: f64,
+    y: f64,
+) -> Result<(), String> {
+    let menu = Menu::new(&window).map_err(|error| error.to_string())?;
+    let delete = MenuItem::with_id(
+        &window,
+        format!("todo-delete:{todo_id}"),
+        "Delete",
+        true,
+        None::<&str>,
+    )
+    .map_err(|error| error.to_string())?;
+    menu.append(&delete).map_err(|error| error.to_string())?;
+    window
+        .popup_menu_at(&menu, tauri::LogicalPosition::new(x, y))
+        .map_err(|error| error.to_string())
 }
 
 pub fn run() {
@@ -155,6 +203,12 @@ pub fn run() {
             })?;
             app.manage(Mutex::new(daemon));
             if let Some(window) = app.get_webview_window("main") {
+                native_sidebar::install(&window).map_err(|message| {
+                    Box::<dyn std::error::Error>::from(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        message,
+                    ))
+                })?;
                 native_search::install(&window).map_err(|message| {
                     Box::<dyn std::error::Error>::from(std::io::Error::new(
                         std::io::ErrorKind::Other,
@@ -164,7 +218,22 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![ocaml_request])
+        .on_menu_event(|app, event| {
+            let id = event.id().as_ref();
+            if let Some(todo_id) = id.strip_prefix("todo-delete:") {
+                if let Some(window) = app.get_webview_window("main") {
+                    if let Ok(serialized) = serde_json::to_string(todo_id) {
+                        let _ = window.eval(&format!(
+                            "globalThis.__TODOS_OCAML_NATIVE_MENU?.({{action:'delete', id:{serialized}}});"
+                        ));
+                    }
+                }
+            }
+        })
+        .invoke_handler(tauri::generate_handler![
+            ocaml_request,
+            show_todo_context_menu
+        ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");
 }

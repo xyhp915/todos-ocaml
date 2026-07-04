@@ -14,6 +14,14 @@ module React = struct
   external key_class_props : key:string -> className:string -> unit -> props = ""
   [@@mel.obj]
 
+  external key_class_context_props :
+    key:string ->
+    className:string ->
+    onContextMenu:('event -> unit) ->
+    unit ->
+    props = ""
+  [@@mel.obj]
+
   external button_props :
     className:string -> onClick:(unit -> unit) -> unit -> props = ""
   [@@mel.obj]
@@ -32,6 +40,8 @@ module React = struct
 
   external event_target : 'event -> 'target = "target" [@@mel.get]
   external target_value : 'target -> string = "value" [@@mel.get]
+  external event_client_x : 'event -> float = "clientX" [@@mel.get]
+  external event_client_y : 'event -> float = "clientY" [@@mel.get]
   external prevent_default : 'event -> unit = "preventDefault" [@@mel.send]
 
   let element tag ?(props = empty_props ()) children =
@@ -87,6 +97,16 @@ module Tauri_runtime = struct
   [@@mel.module "./tauri_runtime.js"]
 
   external setup_native_search : (string -> unit) -> unit = "setupNativeSearch"
+  [@@mel.module "./tauri_runtime.js"]
+
+  external setup_native_sidebar : unit -> unit = "setupNativeSidebar"
+  [@@mel.module "./tauri_runtime.js"]
+
+  external setup_native_menu : (string -> unit) -> unit = "setupNativeMenu"
+  [@@mel.module "./tauri_runtime.js"]
+
+  external show_todo_context_menu :
+    string -> float -> float -> (string -> unit) -> unit = "showTodoContextMenu"
   [@@mel.module "./tauri_runtime.js"]
 
   external request_args : payload:string -> unit -> args = "" [@@mel.obj]
@@ -384,11 +404,19 @@ and delete_todo id =
     Web_store.save updated;
     rerender ())
 
+and show_todo_context_menu todo_id event =
+  if use_tauri_store () then (
+    React.prevent_default event;
+    Tauri_runtime.show_todo_context_menu todo_id
+      (React.event_client_x event)
+      (React.event_client_y event) handle_store_error)
+
 and todo_row todo =
   React.element "li"
     ~props:
-      (React.key_class_props ~key:todo.id
+      (React.key_class_context_props ~key:todo.id
          ~className:("todo-row" ^ if todo.completed then " completed" else "")
+         ~onContextMenu:(show_todo_context_menu todo.id)
          ())
     [
       Base_ui.checkbox
@@ -470,6 +498,8 @@ let () =
   in
   root_ref := Some root;
   if use_tauri_store () then (
+    Tauri_runtime.setup_native_sidebar ();
+    Tauri_runtime.setup_native_menu delete_todo;
     Tauri_runtime.setup_native_search set_search_query;
     Tauri_runtime.setup_liquid_glass ();
     rerender ();

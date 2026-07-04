@@ -22,6 +22,8 @@ require_file src-tauri/tauri.conf.json
 require_file src-tauri/capabilities/default.json
 require_file src-tauri/icons/icon.png
 require_file src-tauri/src/main.rs
+require_file src-tauri/src/native_sidebar.rs
+require_file src-tauri/src/native_sidebar.swift
 require_file app/tauri_store.ml
 require_file web/vite.config.js
 require_file scripts/prepare-tauri-build.sh
@@ -125,12 +127,15 @@ NODE
 require_pattern 'tauri::Builder::default\(\)' src-tauri/src "Tauri builder is missing"
 require_pattern '#\[tauri::command\]' src-tauri/src "Tauri commands are missing"
 command_count=$(rg -n '#\[tauri::command\]' src-tauri/src | wc -l | tr -d ' ')
-if [ "$command_count" != "1" ]; then
-  echo "Rust should expose exactly one generic Tauri command" >&2
+if [ "$command_count" != "2" ]; then
+  echo "Rust should expose the generic OCaml command and one native menu chrome command" >&2
   exit 1
 fi
 require_pattern 'fn ocaml_request' src-tauri/src "Rust bridge must expose one generic ocaml_request command"
-require_pattern 'generate_handler!\[\s*ocaml_request\s*\]' src-tauri/src "Tauri handler must only register ocaml_request"
+require_pattern 'fn show_todo_context_menu' src-tauri/src "Rust bridge must expose a native todo context menu command"
+require_pattern 'generate_handler!\[' src-tauri/src "Tauri handler must register commands"
+require_pattern 'ocaml_request,\s*$' src-tauri/src "Tauri handler must register OCaml IPC"
+require_pattern 'show_todo_context_menu' src-tauri/src "Tauri handler must register native menu chrome"
 if rg -n 'fn (load_todos|add_todo|toggle_todo|delete_todo)|"load_todos"|"add_todo"|"toggle_todo"|"delete_todo"' src-tauri/src web/todos_web.ml >/dev/null; then
   echo "Todo operations must not be duplicated as Rust Tauri commands" >&2
   exit 1
@@ -144,6 +149,12 @@ require_pattern 'BufReader' src-tauri/src "Rust bridge must read daemon stdout i
 require_pattern 'send_command' src-tauri/src "Rust bridge must send commands to the daemon"
 require_pattern '\.manage\(' src-tauri/src "Tauri app must manage the daemon state"
 require_pattern 'tauri_build::build\(\)' src-tauri/build.rs "Tauri build script is missing"
+require_pattern 'native_sidebar::install' src-tauri/src/lib.rs "Tauri setup must install the native AppKit sidebar"
+require_pattern 'compile_native_swift' src-tauri/build.rs "Tauri build script must compile Swift native chrome helpers"
+require_pattern 'native_search.swift' src-tauri/build.rs "Tauri build script must compile native search Swift"
+require_pattern 'native_sidebar.swift' src-tauri/build.rs "Tauri build script must compile native sidebar Swift"
+require_pattern 'NSSplitViewController' src-tauri/src/native_sidebar.swift "Native sidebar must use an actual NSSplitViewController"
+require_pattern 'todos_native_sidebar_install' src-tauri/src/native_sidebar.rs "Rust sidebar bridge must call the Swift sidebar installer"
 require_pattern '\(name tauri_store\)' app/dune "Dune must build the OCaml Tauri store"
 require_pattern 'todos_ocaml' app/dune "OCaml Tauri store must link shared todo runtime"
 require_pattern 'Store.open_sqlite' app/tauri_store.ml "OCaml daemon must open the SQLite store"
@@ -154,6 +165,9 @@ require_pattern 'handle_request' app/tauri_store.ml "OCaml daemon must own reque
 require_pattern 'daemon-loop' app/tauri_store.ml "OCaml store must run as a daemon loop"
 require_pattern 'Tauri_store' web/todos_web.ml "Melange UI must include the Tauri store adapter"
 require_pattern 'Web_store' web/todos_web.ml "Melange UI must keep the browser store adapter"
+require_pattern 'setup_native_sidebar' web/todos_web.ml "Melange UI must connect native sidebar updates"
+require_pattern 'show_todo_context_menu' web/todos_web.ml "Melange UI must request native todo context menus"
+require_pattern 'tauri-native-sidebar' web/src/styles.css "Tauri web UI must hide its web sidebar when native sidebar is installed"
 require_pattern 'melange-transit-melange' web/vite.config.js "Vite must alias the generated melange-transit package name"
 
 if rg -n "React|todos_web|Todo_ui|Bonsai" src-tauri/src >/dev/null; then

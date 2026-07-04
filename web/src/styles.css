@@ -25,6 +25,10 @@ input {
   grid-template-columns: 248px minmax(0, 1fr);
 }
 
+.tauri-native-sidebar .app-shell {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .sidebar {
   padding: 34px 30px;
   border-right: 1px solid rgba(94, 103, 116, 0.18);
@@ -35,6 +39,10 @@ input {
 
 .liquid-glass-supported .sidebar {
   background: rgba(242, 246, 250, 0.42);
+}
+
+.tauri-native-sidebar .sidebar {
+  display: none;
 }
 
 .sidebar h1 {

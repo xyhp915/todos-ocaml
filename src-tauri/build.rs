@@ -14,13 +14,13 @@ fn command_output(command: &mut std::process::Command) -> String {
 }
 
 #[cfg(target_os = "macos")]
-fn compile_native_search_swift() {
+fn compile_native_swift(source_name: &str) {
     use std::path::PathBuf;
 
     let manifest_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
-    let source = manifest_dir.join("src/native_search.swift");
-    let object = out_dir.join("native_search_swift.o");
+    let source = manifest_dir.join("src").join(source_name);
+    let object = out_dir.join(format!("{source_name}.o"));
     let target = std::env::var("TARGET").unwrap();
     let arch = if target.starts_with("aarch64") {
         "arm64"
@@ -61,17 +61,23 @@ fn compile_native_search_swift() {
         .status()
         .expect("failed to run swiftc");
     if !status.success() {
-        panic!("failed to compile native_search.swift");
+        panic!("failed to compile {source_name}");
     }
 
     println!("cargo:rustc-link-arg={}", object.display());
+}
+
+#[cfg(target_os = "macos")]
+fn compile_native_chrome_swift() {
+    compile_native_swift("native_search.swift");
+    compile_native_swift("native_sidebar.swift");
     println!("cargo:rustc-link-lib=framework=AppKit");
     println!("cargo:rustc-link-lib=framework=Foundation");
 }
 
 fn main() {
     #[cfg(target_os = "macos")]
-    compile_native_search_swift();
+    compile_native_chrome_swift();
 
     tauri_build::build()
 }
