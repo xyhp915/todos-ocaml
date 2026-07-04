@@ -412,12 +412,7 @@ and show_todo_context_menu todo_id event =
       (React.event_client_y event) handle_store_error)
 
 and todo_row todo =
-  React.element "li"
-    ~props:
-      (React.key_class_context_props ~key:todo.id
-         ~className:("todo-row" ^ if todo.completed then " completed" else "")
-         ~onContextMenu:(show_todo_context_menu todo.id)
-         ())
+  let children =
     [
       Base_ui.checkbox
         (checkbox_class todo.completed)
@@ -427,10 +422,23 @@ and todo_row todo =
         (fun () -> toggle_todo todo.id);
       React.element "span" ~props:(React.class_props ~className:"todo-title" ())
         [ React.text todo.title ];
-      Base_ui.button ~className:"delete-button"
-        ~onClick:(fun () -> delete_todo todo.id)
-        [ React.text "Delete" ];
     ]
+    @
+    (if use_tauri_store () then []
+     else
+       [
+         Base_ui.button ~className:"delete-button"
+           ~onClick:(fun () -> delete_todo todo.id)
+           [ React.text "Delete" ];
+       ])
+  in
+  React.element "li"
+    ~props:
+      (React.key_class_context_props ~key:todo.id
+         ~className:("todo-row" ^ if todo.completed then " completed" else "")
+         ~onContextMenu:(show_todo_context_menu todo.id)
+         ())
+    children
 
 and todo_column ~title ~empty_text todos =
   React.element "section"

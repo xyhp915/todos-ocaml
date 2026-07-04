@@ -149,6 +149,10 @@ ul {
   backdrop-filter: blur(18px) saturate(1.12);
 }
 
+.tauri-runtime .todo-row {
+  grid-template-columns: 28px minmax(0, 1fr);
+}
+
 .todo-title {
   overflow-wrap: anywhere;
   font-size: 16px;
