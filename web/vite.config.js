@@ -47,6 +47,9 @@ export default defineConfig({
       ),
     },
   },
+  optimizeDeps: {
+    exclude: ["@sqlite.org/sqlite-wasm"],
+  },
   build: {
     outDir: "tauri-dist",
     emptyOutDir: true,

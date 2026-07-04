@@ -226,6 +226,8 @@ if [ -e web/dist/web/react_runtime.js ] || [ -e web/dist/web/db_worker_client.js
   exit 1
 fi
 require_contains "@sqlite.org/sqlite-wasm" web/sqlite_worker_runtime.js "SQLite worker runtime should import sqlite-wasm"
+require_contains "optimizeDeps" web/vite.config.js "Vite config should customize dependency optimization"
+require_contains "@sqlite.org/sqlite-wasm" web/vite.config.js "Vite config should exclude sqlite-wasm from dependency optimization"
 require_any_file_contains "Web dist should import the generated melange-transit package" \
   web/dist/web/todos_web.js "melange-transit-melange/transit.js" \
   web/dist/web/todos_web.js "melange-transit.melange/transit.js" \
