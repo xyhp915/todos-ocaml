@@ -12,8 +12,15 @@
  (alias runtest)
  (deps
   migration_smoke.sh
+  tauri_smoke.sh
   ../dune-project
   ../todos_ocaml.opam
+  ../package.json
+  ../src-tauri/Cargo.toml
+  ../src-tauri/build.rs
+  ../src-tauri/tauri.conf.json
+  ../src-tauri/src/lib.rs
+  ../src-tauri/src/main.rs
   ../app/dune
   ../lib/dune
   dune
@@ -23,3 +30,27 @@
   (chdir
    %{workspace_root}
    (run /bin/sh test/migration_smoke.sh))))
+
+(rule
+ (alias runtest)
+ (deps
+  tauri_smoke.sh
+  ../package.json
+  ../web/package.json
+  ../web/dune
+  ../web/todos_web.ml
+  ../web/tauri_runtime.js
+  ../scripts/prepare-tauri-build.sh
+  ../app/dune
+  ../app/tauri_store.ml
+  ../src-tauri/Cargo.toml
+  ../src-tauri/build.rs
+  ../src-tauri/tauri.conf.json
+  ../src-tauri/capabilities/default.json
+  ../src-tauri/icons/icon.png
+  ../src-tauri/src/lib.rs
+  ../src-tauri/src/main.rs)
+ (action
+  (chdir
+   %{workspace_root}
+   (run /bin/sh test/tauri_smoke.sh))))

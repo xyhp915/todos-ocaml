@@ -5,6 +5,10 @@ vendor/
 web/dist/
 web/node_modules/
 web/release/
+web/tauri-dist/
+src-tauri/target/
+src-tauri/gen/
 *.install
 *.merlin
 .DS_Store
+node_modules/

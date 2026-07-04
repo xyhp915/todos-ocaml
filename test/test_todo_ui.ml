@@ -48,7 +48,7 @@ let todo ?(completed = false) ~id ~title ~created_at_ms () : Todos.Todo.t =
 
 let render ?(controls = Todo_ui.default_controls) model =
   Backend.reset ();
-  let controller : Todos.Controller.t =
+  let controller : unit Apple.Action.t Todos.Controller.t =
     { model; dispatch = (fun _action -> Apple.Action.ignore) }
   in
   let mounted =
@@ -60,7 +60,7 @@ let render ?(controls = Todo_ui.default_controls) model =
 
 let render_mobile ?(controls = Todo_ui.default_controls) model =
   Backend.reset ();
-  let controller : Todos.Controller.t =
+  let controller : unit Apple.Action.t Todos.Controller.t =
     { model; dispatch = (fun _action -> Apple.Action.ignore) }
   in
   let mounted =
@@ -72,7 +72,7 @@ let render_mobile ?(controls = Todo_ui.default_controls) model =
 
 let render_adaptive ?(controls = Todo_ui.default_controls) model =
   Backend.reset ();
-  let controller : Todos.Controller.t =
+  let controller : unit Apple.Action.t Todos.Controller.t =
     { model; dispatch = (fun _action -> Apple.Action.ignore) }
   in
   let mounted =
@@ -181,7 +181,7 @@ let runtime_backed_mobile_app all_todos =
     | Persist _ -> ()
   in
   let component graph =
-    let controller = Todos.Controller.component ~run_command graph in
+    let controller = Todo_ui.controller_component ~run_command graph in
     let route, set_route =
       Apple.state graph ~key:"route" Todos.Screen.Route.All
     in

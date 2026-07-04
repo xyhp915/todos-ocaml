@@ -1,4 +1,9 @@
 (executable
+ (name tauri_store)
+ (modules tauri_store)
+ (libraries todos_ocaml))
+
+(executable
  (name ios_app)
  (modules ios_app)
  (enabled_if

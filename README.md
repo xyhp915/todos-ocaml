@@ -1,7 +1,8 @@
 # todos-ocaml
 
 Cross-platform todo app built with `datascript-ocaml` for shared domain state,
-`bonsai-native` for Apple UI, and Melange React for the web UI.
+`bonsai-native` for Apple UI, Melange React for the web UI, and Tauri for a
+desktop shell that reuses the Melange UI with native OCaml persistence.
 
 ## What is included
 
@@ -11,7 +12,11 @@ Cross-platform todo app built with `datascript-ocaml` for shared domain state,
 - Native Apple UI in `lib/todo_ui.ml`.
 - iOS SwiftUI entrypoint in `app/ios_app.ml`.
 - macOS SwiftUI desktop entrypoint in `app/mac_app.ml`.
-- Web UI in `web/`, with a SQLite wasm worker and Transit JSON codecs.
+- Tauri store daemon in `app/tauri_store.ml`, which opens the native SQLite
+  DataScript store and handles desktop requests over stdin/stdout.
+- Web UI in `web/`, with a SQLite wasm worker for browser persistence and a
+  Tauri adapter for native desktop persistence.
+- Tauri desktop shell in `src-tauri/`.
 - Focused tests in `test/`.
 
 ## Local dependencies
@@ -24,6 +29,14 @@ The opam file pins the upgraded dependency revisions:
 
 ```sh
 opam install . --deps-only --with-test
+```
+
+Tauri also needs Rust and npm dependencies:
+
+```sh
+. "$HOME/.cargo/env"
+npm install
+npm --prefix web install
 ```
 
 ## Test
@@ -71,4 +84,41 @@ opam exec -- dune build @web-demo
 cd web
 npm install
 npm run dev
+```
+
+## Run Tauri Desktop
+
+The Tauri app reuses the Melange React UI from `web/`, but desktop persistence
+does not use the browser SQLite wasm worker. Tauri starts the native OCaml store
+daemon from `app/tauri_store.ml`, and that daemon talks to the SQLite-backed
+DataScript store.
+
+Run the development app from the repository root:
+
+```sh
+. "$HOME/.cargo/env"
+npm install
+npm --prefix web install
+npm run tauri:dev
+```
+
+Build an installable macOS app and DMG:
+
+```sh
+. "$HOME/.cargo/env"
+npm run tauri:build
+```
+
+The build outputs are:
+
+```text
+src-tauri/target/release/bundle/macos/Todos OCaml.app
+src-tauri/target/release/bundle/dmg/Todos OCaml_0.1.0_aarch64.dmg
+```
+
+Install by opening the DMG and dragging `Todos OCaml.app` into
+`/Applications`:
+
+```sh
+open "src-tauri/target/release/bundle/dmg/Todos OCaml_0.1.0_aarch64.dmg"
 ```

@@ -49,6 +49,24 @@ let default_controls =
 
 let next_todo = Screen.next_todo
 
+type controller = unit Apple.Action.t Todos.Controller.t
+
+type run_command =
+  dispatch:(Todos.Action.t -> unit Apple.Action.t) ->
+  Todos.Command.t ->
+  unit Apple.Action.t
+
+let ignore_command : run_command = fun ~dispatch:_ _command -> Apple.Action.ignore
+
+let controller_component ?(run_command : run_command = ignore_command) graph =
+  let model, set_model = Apple.state graph ~key:"model" Todos.Model.initial in
+  let rec dispatch action () =
+    let next_model, commands = Todos.Model.update model action in
+    set_model next_model ();
+    List.iter commands ~f:(fun command -> run_command ~dispatch command ())
+  in
+  ({ model; dispatch } : controller)
+
 type visible_todo_item =
   | Todo_item of Todos.Todo.t
   | Load_more_item of { next_offset : int }
@@ -392,11 +410,11 @@ let split_view model controls ~dispatch =
        ]
 
 let view ?(controls = default_controls)
-    ({ model; dispatch } : Todos.Controller.t) =
+    ({ model; dispatch } : controller) =
   split_view model controls ~dispatch
 
 let mobile_view ?(controls = default_controls)
-    ({ model; dispatch } : Todos.Controller.t) =
+    ({ model; dispatch } : controller) =
   let clear_search_on_exit =
     if
       String.equal controls.mobile_tab search_tab
@@ -470,9 +488,8 @@ let adaptive_view ?(controls = default_controls) controller =
     ~compact:(mobile_view controller ~controls)
     ~regular:(view controller ~controls)
 
-let component_with_view ?(run_command = Todos.Controller.ignore_command) render
-    graph =
-  let controller = Todos.Controller.component ~run_command graph in
+let component_with_view ?(run_command : run_command = ignore_command) render graph =
+  let controller = controller_component ~run_command graph in
   let route, set_route = Apple.state graph ~key:"route" Route.All in
   let search, set_search = Apple.state graph ~key:"search" "" in
   let selected_todo_id, set_selected_todo_id =

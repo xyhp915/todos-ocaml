@@ -430,23 +430,5 @@ module Screen = struct
 end
 
 module Controller = struct
-  module Native = Bonsai_native
-
-  type t = { model : Model.t; dispatch : Action.t -> Native.Action.t }
-
-  type run_command =
-    dispatch:(Action.t -> Native.Action.t) -> Command.t -> Native.Action.t
-
-  let ignore_command ~dispatch:_ _command = Native.Action.ignore
-
-  let component ?(run_command = ignore_command) graph =
-    let model, set_model =
-      Native.Graph.state graph ~key:"model" Model.initial
-    in
-    let rec dispatch action () =
-      let next_model, commands = Model.update model action in
-      set_model next_model ();
-      List.iter commands ~f:(fun command -> run_command ~dispatch command ())
-    in
-    { model; dispatch }
+  type 'action t = { model : Model.t; dispatch : Action.t -> 'action }
 end
