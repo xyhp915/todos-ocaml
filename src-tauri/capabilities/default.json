@@ -3,5 +3,9 @@
   "identifier": "default",
   "description": "Default permissions for the main desktop window",
   "windows": ["main"],
-  "permissions": ["core:default", "liquid-glass:default"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "liquid-glass:default"
+  ]
 }

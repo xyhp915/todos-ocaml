@@ -86,6 +86,9 @@ module Tauri_runtime = struct
   external setup_liquid_glass : unit -> unit = "setupLiquidGlass"
   [@@mel.module "./tauri_runtime.js"]
 
+  external setup_native_search : (string -> unit) -> unit = "setupNativeSearch"
+  [@@mel.module "./tauri_runtime.js"]
+
   external request_args : payload:string -> unit -> args = "" [@@mel.obj]
 end
 
@@ -138,6 +141,7 @@ type todo = {
 
 let todos = ref []
 let draft = ref ""
+let search_query = ref ""
 let root_ref : React_dom.root option ref = ref None
 let worker_ref : Web_worker.t option ref = ref None
 
@@ -237,6 +241,23 @@ let decode_native_todos payload =
 let active_todos todos = List.filter (fun todo -> not todo.completed) todos
 let completed_todos todos = List.filter (fun todo -> todo.completed) todos
 
+let contains_text ~query value =
+  let query = String.trim (String.lowercase_ascii query) in
+  let value = String.lowercase_ascii value in
+  let query_length = String.length query in
+  let value_length = String.length value in
+  if query_length = 0 then true
+  else if query_length > value_length then false
+  else
+    let rec loop index =
+      index + query_length <= value_length
+      && (String.sub value index query_length = query || loop (index + 1))
+    in
+    loop 0
+
+let filter_todos query todos =
+  List.filter (fun todo -> contains_text ~query todo.title) todos
+
 let current_time_ms () = int_of_float (Clock.now ())
 
 let next_id () = "todo-" ^ string_of_int (current_time_ms ())
@@ -302,6 +323,10 @@ let rec rerender () =
 
 and set_draft value =
   draft := value;
+  rerender ()
+
+and set_search_query value =
+  search_query := value;
   rerender ()
 
 and handle_loaded_todos loaded =
@@ -393,6 +418,8 @@ and todo_column ~title ~empty_text todos =
 and app_view () =
   let active = active_todos !todos in
   let completed = completed_todos !todos in
+  let visible_active = filter_todos !search_query active in
+  let visible_completed = filter_todos !search_query completed in
   React.element "main" ~props:(React.class_props ~className:"app-shell" ())
     [
       React.element "aside" ~props:(React.class_props ~className:"sidebar" ())
@@ -423,9 +450,9 @@ and app_view () =
           React.element "div" ~props:(React.class_props ~className:"columns" ())
             [
               todo_column ~title:"Active" ~empty_text:"Nothing active right now."
-                active;
+                visible_active;
               todo_column ~title:"Done" ~empty_text:"Nothing completed yet."
-                completed;
+                visible_completed;
             ];
         ];
     ]
@@ -443,6 +470,7 @@ let () =
   in
   root_ref := Some root;
   if use_tauri_store () then (
+    Tauri_runtime.setup_native_search set_search_query;
     Tauri_runtime.setup_liquid_glass ();
     rerender ();
     Tauri_store.load ~on_loaded:handle_tauri_payload

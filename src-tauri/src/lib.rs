@@ -1,9 +1,13 @@
+#![allow(unexpected_cfgs)]
+
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::Mutex;
 
 use tauri::Manager;
+
+mod native_search;
 
 fn tauri_store_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     if let Some(path) = std::env::var_os("TODOS_OCAML_TAURI_STORE") {
@@ -150,6 +154,14 @@ pub fn run() {
                 ))
             })?;
             app.manage(Mutex::new(daemon));
+            if let Some(window) = app.get_webview_window("main") {
+                native_search::install(&window).map_err(|message| {
+                    Box::<dyn std::error::Error>::from(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        message,
+                    ))
+                })?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![ocaml_request])
