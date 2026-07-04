@@ -3,6 +3,10 @@ import ObjectiveC
 
 public typealias SearchCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>) -> Void
 
+@_silgen_name("todos_native_sidebar_toggle")
+private func todosNativeSidebarToggle(_ nsWindowPointer: UnsafeMutableRawPointer?) -> Bool
+
+private let sidebarToggleIdentifier = NSToolbarItem.Identifier("todos.sidebar.toggle")
 private let searchButtonIdentifier = NSToolbarItem.Identifier("todos.search.button")
 private let searchFieldIdentifier = NSToolbarItem.Identifier("todos.search")
 private var controllerAssociationKey: UInt8 = 0
@@ -35,8 +39,9 @@ private final class TodosNativeSearchController: NSObject, NSToolbarDelegate, NS
             toolbar.centeredItemIdentifiers = []
         }
 
-        toolbar.insertItem(withItemIdentifier: .flexibleSpace, at: 0)
-        toolbar.insertItem(withItemIdentifier: searchButtonIdentifier, at: 1)
+        toolbar.insertItem(withItemIdentifier: sidebarToggleIdentifier, at: 0)
+        toolbar.insertItem(withItemIdentifier: .flexibleSpace, at: 1)
+        toolbar.insertItem(withItemIdentifier: searchButtonIdentifier, at: 2)
 
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
@@ -49,11 +54,11 @@ private final class TodosNativeSearchController: NSObject, NSToolbarDelegate, NS
     }
 
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.flexibleSpace, searchButtonIdentifier, searchFieldIdentifier]
+        [sidebarToggleIdentifier, .flexibleSpace, searchButtonIdentifier, searchFieldIdentifier]
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.flexibleSpace, searchButtonIdentifier]
+        [sidebarToggleIdentifier, .flexibleSpace, searchButtonIdentifier]
     }
 
     func toolbar(
@@ -62,6 +67,8 @@ private final class TodosNativeSearchController: NSObject, NSToolbarDelegate, NS
         willBeInsertedIntoToolbar flag: Bool
     ) -> NSToolbarItem? {
         switch itemIdentifier {
+        case sidebarToggleIdentifier:
+            return makeSidebarToggle()
         case searchButtonIdentifier:
             return makeSearchButton()
         case searchFieldIdentifier:
@@ -91,6 +98,11 @@ private final class TodosNativeSearchController: NSObject, NSToolbarDelegate, NS
         }
     }
 
+    @objc private func toggleSidebar(_ sender: Any?) {
+        let windowPointer = Unmanaged.passUnretained(window).toOpaque()
+        _ = todosNativeSidebarToggle(windowPointer)
+    }
+
     @objc private func searchChanged(_ sender: NSSearchField) {
         sender.stringValue.withCString { value in
             callback(userData, value)
@@ -113,6 +125,20 @@ private final class TodosNativeSearchController: NSObject, NSToolbarDelegate, NS
         item.image =
             NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: "Search")
             ?? NSImage(named: NSImage.touchBarSearchTemplateName)
+        item.isBordered = true
+        return item
+    }
+
+    private func makeSidebarToggle() -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: sidebarToggleIdentifier)
+        item.label = "Sidebar"
+        item.paletteLabel = "Toggle Sidebar"
+        item.toolTip = "Toggle Sidebar"
+        item.target = self
+        item.action = #selector(toggleSidebar(_:))
+        item.image =
+            NSImage(systemSymbolName: "sidebar.left", accessibilityDescription: "Toggle Sidebar")
+            ?? NSImage(named: NSImage.touchBarSidebarTemplateName)
         item.isBordered = true
         return item
     }

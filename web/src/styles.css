@@ -74,6 +74,10 @@ input {
   background: rgba(248, 250, 252, 0.26);
 }
 
+.tauri-native-sidebar .workspace {
+  background: transparent;
+}
+
 .composer {
   display: flex;
   align-items: center;
