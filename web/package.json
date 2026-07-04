@@ -7,8 +7,10 @@
   },
   "dependencies": {
     "@sqlite.org/sqlite-wasm": "3.53.0-build1",
+    "@tauri-apps/api": "^2.11.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "tauri-plugin-liquid-glass-api": "^0.1.6",
     "transit-js": "^0.8.874",
     "vite": "^7.0.0"
   }

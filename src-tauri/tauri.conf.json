@@ -10,6 +10,7 @@
     "frontendDist": "../web/tauri-dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [
       {
@@ -18,7 +19,8 @@
         "width": 1100,
         "height": 760,
         "minWidth": 780,
-        "minHeight": 560
+        "minHeight": 560,
+        "transparent": true
       }
     ],
     "security": {

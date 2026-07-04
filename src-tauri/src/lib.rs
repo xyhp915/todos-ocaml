@@ -141,6 +141,7 @@ fn ocaml_request(
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_liquid_glass::init())
         .setup(|app| {
             let daemon = TauriStoreDaemon::spawn(app.handle()).map_err(|message| {
                 Box::<dyn std::error::Error>::from(std::io::Error::new(

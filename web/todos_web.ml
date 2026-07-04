@@ -83,6 +83,9 @@ module Tauri_runtime = struct
     = "invokeString"
   [@@mel.module "./tauri_runtime.js"]
 
+  external setup_liquid_glass : unit -> unit = "setupLiquidGlass"
+  [@@mel.module "./tauri_runtime.js"]
+
   external request_args : payload:string -> unit -> args = "" [@@mel.obj]
 end
 
@@ -420,6 +423,7 @@ let () =
   in
   root_ref := Some root;
   if use_tauri_store () then (
+    Tauri_runtime.setup_liquid_glass ();
     rerender ();
     Tauri_store.load ~on_loaded:handle_tauri_payload
       ~on_error:handle_store_error)
