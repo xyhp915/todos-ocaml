@@ -6,5 +6,5 @@
  (preprocess
   (pps melange.ppx))
  (libraries datascript_ocaml.melange_storage melange-transit.melange)
- (runtime_deps sqlite_worker_runtime.js tauri_runtime.js)
+ (runtime_deps base_ui_runtime.js sqlite_worker_runtime.js tauri_runtime.js)
  (promote (until-clean)))

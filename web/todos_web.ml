@@ -89,6 +89,30 @@ module Tauri_runtime = struct
   external request_args : payload:string -> unit -> args = "" [@@mel.obj]
 end
 
+module Base_ui = struct
+  external raw_button :
+    string -> (unit -> unit) -> React.node array -> React.node = "button"
+  [@@mel.module "./base_ui_runtime.js"]
+
+  external raw_submit_button : string -> React.node array -> React.node
+    = "submitButton"
+  [@@mel.module "./base_ui_runtime.js"]
+
+  external text_input :
+    string -> string -> string -> (string -> unit) -> React.node = "textInput"
+  [@@mel.module "./base_ui_runtime.js"]
+
+  external checkbox :
+    string -> bool -> string -> (unit -> unit) -> React.node = "checkbox"
+  [@@mel.module "./base_ui_runtime.js"]
+
+  let button ~className ~onClick children =
+    raw_button className onClick (Array.of_list children)
+
+  let submit_button ~className children =
+    raw_submit_button className (Array.of_list children)
+end
+
 module Json = struct
   type native_todo
 
@@ -342,15 +366,16 @@ and todo_row todo =
          ~className:("todo-row" ^ if todo.completed then " completed" else "")
          ())
     [
-      React.element "button"
-        ~props:
-          (React.button_props ~className:(checkbox_class todo.completed)
-             ~onClick:(fun () -> toggle_todo todo.id)
-             ())
-        [];
-      React.element "span" [ React.text todo.title ];
-      React.element "button"
-        ~props:(React.button_props ~className:"delete-button" ~onClick:(fun () -> delete_todo todo.id) ())
+      Base_ui.checkbox
+        (checkbox_class todo.completed)
+        todo.completed
+        (if todo.completed then "Mark active: " ^ todo.title
+         else "Mark done: " ^ todo.title)
+        (fun () -> toggle_todo todo.id);
+      React.element "span" ~props:(React.class_props ~className:"todo-title" ())
+        [ React.text todo.title ];
+      Base_ui.button ~className:"delete-button"
+        ~onClick:(fun () -> delete_todo todo.id)
         [ React.text "Delete" ];
     ]
 
@@ -392,13 +417,8 @@ and app_view () =
                    add_todo ())
                  ())
             [
-              React.element "input"
-                ~props:
-                  (React.input_props ~value:!draft ~placeholder:"New task"
-                     ~onChange:(fun event -> set_draft (React.event_value event))
-                     ())
-                [];
-              React.element "button" [ React.text "Add" ];
+              Base_ui.text_input "composer-input" !draft "New task" set_draft;
+              Base_ui.submit_button ~className:"add-button" [ React.text "Add" ];
             ];
           React.element "div" ~props:(React.class_props ~className:"columns" ())
             [

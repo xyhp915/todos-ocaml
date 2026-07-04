@@ -6,6 +6,7 @@
     "dev": "vite --host 127.0.0.1 --port 1420 --strictPort"
   },
   "dependencies": {
+    "@base-ui/react": "^1.6.0",
     "@sqlite.org/sqlite-wasm": "3.53.0-build1",
     "@tauri-apps/api": "^2.11.1",
     "react": "^19.0.0",
