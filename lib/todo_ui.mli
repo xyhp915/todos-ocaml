@@ -18,25 +18,27 @@ type controls = {
   set_visible_todo_limit : int -> unit Apple.Action.t;
 }
 
-val default_controls : controls
-val view : ?controls:controls -> Todos.Controller.t -> Bonsai_apple.node
-val mobile_view : ?controls:controls -> Todos.Controller.t -> Bonsai_apple.node
+type controller = unit Apple.Action.t Todos.Controller.t
 
-val adaptive_view :
-  ?controls:controls -> Todos.Controller.t -> Bonsai_apple.node
+type run_command =
+  dispatch:(Todos.Action.t -> unit Apple.Action.t) ->
+  Todos.Command.t ->
+  unit Apple.Action.t
+
+val default_controls : controls
+val view : ?controls:controls -> controller -> Bonsai_apple.node
+val mobile_view : ?controls:controls -> controller -> Bonsai_apple.node
+
+val adaptive_view : ?controls:controls -> controller -> Bonsai_apple.node
+val ignore_command : run_command
+val controller_component : ?run_command:run_command -> Apple.graph -> controller
 
 val component :
-  ?run_command:
-    (dispatch:(Todos.Action.t -> unit Apple.Action.t) ->
-    Todos.Command.t ->
-    unit Apple.Action.t) ->
+  ?run_command:run_command ->
   Apple.graph ->
   Bonsai_apple.node
 
 val adaptive_component :
-  ?run_command:
-    (dispatch:(Todos.Action.t -> unit Apple.Action.t) ->
-    Todos.Command.t ->
-    unit Apple.Action.t) ->
+  ?run_command:run_command ->
   Apple.graph ->
   Bonsai_apple.node

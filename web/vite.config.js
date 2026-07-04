@@ -16,6 +16,15 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      datascript_ocaml: path.join(generatedNodeModules, "datascript_ocaml"),
+      "datascript_ocaml.melange_storage": path.join(
+        generatedNodeModules,
+        "datascript_ocaml.melange_storage",
+      ),
+      "datascript_ocaml.types": path.join(
+        generatedNodeModules,
+        "datascript_ocaml.types",
+      ),
       melange: path.join(generatedNodeModules, "melange"),
       "melange-edn": path.join(generatedNodeModules, "melange-edn"),
       "melange-edn-melange": path.join(
@@ -28,6 +37,14 @@ export default defineConfig({
         "melange-transit-melange",
       ),
       "melange.js": path.join(generatedNodeModules, "melange.js"),
+      persistent_sorted_set_ocaml: path.join(
+        generatedNodeModules,
+        "persistent_sorted_set_ocaml",
+      ),
+      "todos_ocaml.core": path.join(
+        generatedNodeModules,
+        "todos_ocaml.core",
+      ),
     },
   },
   build: {

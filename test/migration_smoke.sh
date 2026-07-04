@@ -83,6 +83,23 @@ if ! grep -R "datascript_ocaml.melange_storage" web/dune >/dev/null; then
   exit 1
 fi
 
+if ! grep -R "todos_ocaml.core" web/dune >/dev/null; then
+  echo "Web demo should link the shared todo core in Melange" >&2
+  exit 1
+fi
+
+for generated_package in \
+  "datascript_ocaml" \
+  "datascript_ocaml.melange_storage" \
+  "persistent_sorted_set_ocaml" \
+  "todos_ocaml.core"
+do
+  if ! grep -R "\"$generated_package\"" web/vite.config.js >/dev/null; then
+    echo "Vite should alias generated package $generated_package from dist/node_modules" >&2
+    exit 1
+  fi
+done
+
 if [ -e lib/todo_datascript_sqlite_stubs.c ]; then
   echo "SQLite C stubs should live in datascript_ocaml.sqlite, not the app" >&2
   exit 1
@@ -115,6 +132,36 @@ fi
 
 if grep -R "localStorage\\|getItem\\|setItem" web/todos_web.ml >/dev/null; then
   echo "Web UI should not persist state directly in localStorage" >&2
+  exit 1
+fi
+
+if rg -n "encode_todos|decode_todos|todos_to_transit|todo_to_transit|Transit_json" web/todos_web.ml >/dev/null; then
+  echo "Browser web UI should not persist a serialized todo list; it should use the DataScript-backed worker store" >&2
+  exit 1
+fi
+
+if rg -n "module Store = struct" web/todos_db_worker.ml >/dev/null; then
+  echo "Browser web worker should use Todo_core.Store directly, not a local store facade" >&2
+  exit 1
+fi
+
+if ! rg -n "Todo_core\\.Store\\.restore_or_create|Store\\.restore_or_create" web/todos_db_worker.ml >/dev/null; then
+  echo "Browser web worker should restore the shared Todo_core.Store" >&2
+  exit 1
+fi
+
+if ! rg -n "Todo_core\\.Store\\.apply_write|Store\\.apply_write" web/todos_db_worker.ml >/dev/null; then
+  echo "Browser web worker should apply writes through the shared Todo_core.Store" >&2
+  exit 1
+fi
+
+if ! rg -n "Todo_core\\.Store\\.list|Store\\.list" web/todos_db_worker.ml >/dev/null; then
+  echo "Browser web worker should return todos from the shared Todo_core.Store" >&2
+  exit 1
+fi
+
+if ! rg -n "storage_store|storage_restore|storage_list_addresses|Datascript_melange_storage\\.encode|Datascript_melange_storage\\.decode" web/todos_db_worker.ml >/dev/null; then
+  echo "Browser web worker should expose SQLite wasm as a DataScript storage backend" >&2
   exit 1
 fi
 
@@ -179,10 +226,16 @@ if [ -e web/dist/web/react_runtime.js ] || [ -e web/dist/web/db_worker_client.js
   exit 1
 fi
 require_contains "@sqlite.org/sqlite-wasm" web/sqlite_worker_runtime.js "SQLite worker runtime should import sqlite-wasm"
-require_any_contains web/dist/web/todos_web.js \
-  "Web dist should import the generated melange-transit package" \
-  "melange-transit-melange/transit.js" \
-  "melange-transit.melange/transit.js"
+require_any_file_contains "Web dist should import the generated melange-transit package" \
+  web/dist/web/todos_web.js "melange-transit-melange/transit.js" \
+  web/dist/web/todos_web.js "melange-transit.melange/transit.js" \
+  web/dist/web/todos_db_worker.js "melange-transit-melange/transit.js" \
+  web/dist/web/todos_db_worker.js "melange-transit.melange/transit.js" \
+  web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js "melange-transit-melange/transit.js" \
+  web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js "melange-transit.melange/transit.js"
+require_any_contains web/dist/web/todos_db_worker.js \
+  "Web worker dist should import the generated DataScript storage package" \
+  "datascript_ocaml.melange_storage/datascript_melange_storage.js"
 require_file web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js
 require_any_contains web/dist/node_modules/datascript_ocaml.melange_storage/datascript_melange_storage.js \
   "Datascript melange storage should import the generated melange-transit package" \

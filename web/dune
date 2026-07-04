@@ -4,7 +4,10 @@
  (module_systems es6)
  (modules todos_web todos_db_worker)
  (preprocess
-  (pps melange.ppx))
- (libraries datascript_ocaml.melange_storage melange-transit.melange)
+ (pps melange.ppx))
+ (libraries
+  todos_ocaml.core
+  datascript_ocaml.melange_storage
+  melange-transit.melange)
  (runtime_deps base_ui_runtime.js sqlite_worker_runtime.js tauri_runtime.js)
  (promote (until-clean)))

@@ -1,5 +1,3 @@
-module Transit_json = Transit_melange.Transit.Json
-
 module React = struct
   type node
   type props
@@ -165,85 +163,6 @@ let search_query = ref ""
 let root_ref : React_dom.root option ref = ref None
 let worker_ref : Web_worker.t option ref = ref None
 
-let todo_to_transit todo =
-  Transit_json.Map
-    [
-      (Transit_json.Keyword "todo/id", Transit_json.String todo.id);
-      (Transit_json.Keyword "todo/title", Transit_json.String todo.title);
-      (Transit_json.Keyword "todo/completed", Transit_json.Bool todo.completed);
-      ( Transit_json.Keyword "todo/created-at-ms",
-        Transit_json.Int todo.created_at_ms );
-    ]
-
-let field key entries =
-  List.find_map
-    (fun (entry_key, value) ->
-      match entry_key with
-      | Transit_json.Keyword entry_key when String.equal entry_key key ->
-          Some value
-      | Transit_json.String entry_key when String.equal entry_key key ->
-          Some value
-      | _ -> None)
-    entries
-
-let int_field key entries =
-  match field key entries with
-  | Some (Transit_json.Int value) -> Some value
-  | Some (Transit_json.Int64 value) -> Some (Int64.to_int value)
-  | _ -> None
-
-let id_field key entries =
-  match field key entries with
-  | Some (Transit_json.String value) -> Some value
-  | Some (Transit_json.Int value) -> Some (string_of_int value)
-  | Some (Transit_json.Int64 value) -> Some (Int64.to_string value)
-  | _ -> None
-
-let string_field key entries =
-  match field key entries with
-  | Some (Transit_json.String value) -> Some value
-  | _ -> None
-
-let bool_field key entries =
-  match field key entries with
-  | Some (Transit_json.Bool value) -> Some value
-  | _ -> None
-
-let todo_of_transit = function
-  | Transit_json.Map entries -> (
-      match
-        (id_field "todo/id" entries, string_field "todo/title" entries)
-      with
-      | Some id, Some title ->
-          Some
-            {
-              id;
-              title;
-              completed =
-                (match bool_field "todo/completed" entries with
-                | Some completed -> completed
-                | None -> false);
-              created_at_ms =
-                (match int_field "todo/created-at-ms" entries with
-                | Some created_at_ms -> created_at_ms
-                | None -> 0);
-            }
-      | _ -> None)
-  | _ -> None
-
-let todos_to_transit todos = Transit_json.Array (List.map todo_to_transit todos)
-
-let todos_of_transit = function
-  | Transit_json.Array values | Transit_json.List values ->
-      List.filter_map todo_of_transit values
-  | _ -> []
-
-let encode_todos todos = Transit_json.to_string (todos_to_transit todos)
-
-let decode_todos payload =
-  if String.equal payload "" then []
-  else try payload |> Transit_json.of_string |> todos_of_transit with _ -> []
-
 let decode_native_todos payload =
   if String.equal payload "" then []
   else
@@ -300,8 +219,20 @@ module Web_store = struct
   let start ~on_message =
     worker_ref := Some (Web_worker.start ~on_message)
 
-  let save value = post ("save:" ^ encode_todos value)
   let load () = post "load"
+
+  let add todo =
+    post
+      (String.concat "\t"
+         [
+           "add";
+           protocol_escape todo.id;
+           string_of_int todo.created_at_ms;
+           protocol_escape todo.title;
+         ])
+
+  let toggle id = post (String.concat "\t" [ "toggle"; protocol_escape id ])
+  let delete id = post (String.concat "\t" [ "delete"; protocol_escape id ])
 end
 
 module Tauri_store = struct
@@ -373,25 +304,16 @@ and add_todo () =
       Tauri_store.add todo ~on_loaded:handle_tauri_payload
         ~on_error:handle_store_error;
       rerender ())
-    else
-      let updated = todo :: !todos in
-      todos := updated;
-      Web_store.save updated;
-      rerender ())
+    else (
+      Web_store.add todo;
+      rerender ()))
 
 and toggle_todo id =
   if use_tauri_store () then
     Tauri_store.toggle id ~on_loaded:handle_tauri_payload
       ~on_error:handle_store_error
   else (
-    let updated =
-      !todos
-      |> List.map (fun todo ->
-             if todo.id = id then { todo with completed = not todo.completed }
-             else todo)
-    in
-    todos := updated;
-    Web_store.save updated;
+    Web_store.toggle id;
     rerender ())
 
 and delete_todo id =
@@ -399,9 +321,7 @@ and delete_todo id =
     Tauri_store.delete id ~on_loaded:handle_tauri_payload
       ~on_error:handle_store_error
   else (
-    let updated = !todos |> List.filter (fun todo -> todo.id <> id) in
-    todos := updated;
-    Web_store.save updated;
+    Web_store.delete id;
     rerender ())
 
 and show_todo_context_menu todo_id event =
@@ -496,7 +416,7 @@ and app_view () =
 let handle_store_message message =
   if String.starts_with ~prefix:"loaded:" message then (
     let payload = String.sub message 7 (String.length message - 7) in
-    handle_loaded_todos (decode_todos payload))
+    handle_tauri_payload payload)
   else if String.starts_with ~prefix:"failed:" message then handle_store_error message
   else ()
 

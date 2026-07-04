@@ -3,7 +3,8 @@
  (public_name todos_ocaml.core)
  (wrapped false)
  (modules todo_core todo_std)
- (libraries bonsai_native datascript_ocaml))
+ (modes native byte melange)
+ (libraries datascript_ocaml))
 
 (library
  (name todos)
